@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'app',
     'userauths',
     'store',
+    'adminauth',
 ]
 
 MIDDLEWARE = [

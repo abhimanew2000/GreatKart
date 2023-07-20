@@ -26,6 +26,7 @@ urlpatterns = [
     path('',include('app.urls')),
     path('userauths/',include('userauths.urls')),
     path('store/',include('store.urls')),
+    path('adminauth/', include('adminauth.urls')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # if settings.DEBUG:
 #     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
