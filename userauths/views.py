@@ -93,7 +93,7 @@ def handlelogin(request):
 
         user = authenticate(request, email=email, password=password)
 
-        if user is not None:
+        if user is not None and user.is_blocked==False:
             login(request, user)
             messages.success(request, f"You are logged in")
             return redirect('index')
