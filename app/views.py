@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from app.models import Product
 # Create your views here.
 def index(request):
-    products=Product.objects.all().filter(is_available=True)
+    products = Product.objects.filter(is_available=True)[:8]
     context={
         'products':products,
     }
