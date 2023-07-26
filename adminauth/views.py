@@ -95,6 +95,27 @@ def add_product(request):
     
 
     return render(request, 'adminauth/add_product.html')
+def edit_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+
+    if request.method == 'POST':
+        product.title = request.POST.get('title')
+        product.marked_price = request.POST.get('marked_price')
+        product.selling_price = request.POST.get('selling_price')
+        product.is_available = request.POST.get('is_available') == 'True'
+
+        # Update the category if needed
+        category_id = request.POST.get('category')
+        if category_id:
+            product.category_id = category_id
+
+        product.save()
+
+        # After successfully editing, you might want to redirect to the product list page
+        return redirect('productlist')  # Replace 'productlist' with the name of the URL pattern for your product list page
+
+    # If it's a GET request, render the edit product form
+    return render(request, 'adminauth/edit_product.html', {'product': product})
 
 
 def delete_product(request, product_id):

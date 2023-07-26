@@ -3,6 +3,7 @@ from userauths.models import User
 from django.conf import settings
 from django.utils.text import slugify
 from django.urls import reverse
+
 class Category(models.Model):
     title = models.CharField(max_length=200)
     cat_slug = models.SlugField(blank=True, unique=True)
@@ -23,7 +24,7 @@ class Category(models.Model):
 class Product(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=100, unique=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     image = models.ImageField(upload_to="products")
     marked_price = models.PositiveIntegerField()
     selling_price = models.PositiveIntegerField()

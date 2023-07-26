@@ -48,8 +48,9 @@ def handlesignup(request):
                 fail_silently=False,
             )
             return redirect('otp_verify')
+    else:
     
-    form = UserRegisterForm()
+        form = UserRegisterForm()
     return render(request, 'userauths/signup.html', {'form': form})
 
 
