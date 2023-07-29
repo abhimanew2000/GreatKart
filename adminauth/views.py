@@ -129,6 +129,78 @@ def delete_product(request, product_id):
 
     return render(request, 'adminauth/delete_product.html', {'product': product})
 
+from django.shortcuts import render, redirect
+from app.models import Variation
 
+def add_variation(request):
+    if request.method == 'POST':
+        variation_category = request.POST.get('variation_category')
+        variation_value = request.POST.get('variation_value')
 
+        # Assuming you have a product_id associated with the variation,
+        # you can retrieve the product instance based on the product_id.
+        # Replace 'product_id' with the actual field name where the product ID is stored in your form.
+        product_id = request.POST.get('product_id')
+        product = Product.objects.get(id=product_id)
 
+        # If the variation category is 'Size', add 'GB' to the variation value
+        if variation_category == 'Size':
+            variation_value = f'{variation_value} GB'
+        elif variation_category == 'RAM':
+            variation_value = f'{variation_value} GB RAM'  # Assuming RAM value is provided in GB
+
+        # Create the new variation object
+        variation = Variation.objects.create(
+            product=product,
+            variation_category=variation_category,
+            variation_value=variation_value,
+            # Add other fields as needed
+        )
+        return redirect('add_variant')  # Redirect to the add variation page after adding a variation
+
+    return render(request, 'adminauth/add_variation.html')
+
+def variantlist(request):
+
+    variations = Variation.objects.all()
+
+    return render(request, 'adminauth/variantlist.html', {'variations': variations})
+
+def add_variation(request):
+    if request.method == 'POST':
+        product_id = request.POST['product_id']
+        variation_category = request.POST['variation_category']
+        variation_value = request.POST['variation_value']
+        is_active = request.POST['is_active']
+
+        # Get the corresponding product using the product_id
+        product = Product.objects.get(id=product_id)
+
+        # Create a new Variation object and save it to the database
+        variation = Variation(
+            product=product,
+            variation_category=variation_category,
+            variation_value=variation_value,
+            is_active=is_active == 'True'  # Convert 'True'/'False' string to boolean
+        )
+        variation.save()
+
+        # Redirect back to the variation list or any other page
+        return redirect('variantlist')
+
+    # If the request method is GET, render the template with the products data
+    products = Product.objects.all()
+    return render(request, 'adminauth/add_variation.html', {'products': products})
+
+def delete_variation(request, variation_id):
+    variation = get_object_or_404(Variation, id=variation_id)
+
+    if request.method == 'POST':
+        variation.delete()
+        return redirect('variantlist')
+
+    context = {
+        'variation': variation,
+    }
+
+    return render(request, 'adminauth/delete_variation.html', context)

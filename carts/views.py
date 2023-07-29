@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect,get_object_or_404
 from app.models import Product
 from .models import Carts, CartItem
 from django.core.exceptions import ObjectDoesNotExist
-
-
+from django.http import HttpResponse
+from app.models import Variation
 # Create your views here.
 
 def _cart_id(request):
@@ -13,6 +13,16 @@ def _cart_id(request):
     return cart
 
 def add_cart(request, product_id):
+    if request.method=="POST":
+        for item in request.POST:
+            key = item
+            value=request.POST[key]
+            try:
+                variations=Variation.objects.get(product=product,variation_category__iexact=key, variation_value__iexact=value)
+                print(variations)
+            except:
+                pass
+
     product = Product.objects.get(id=product_id)
     try:
         cart = Carts.objects.get(cart_id=_cart_id(request))
@@ -52,6 +62,7 @@ def remove_cart_item(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     
     try:
+        
         cart_item = CartItem.objects.get(cart=cart, product=product)
         cart_item.delete()
     except CartItem.DoesNotExist:
@@ -60,16 +71,18 @@ def remove_cart_item(request, product_id):
     return redirect('cart')
 
 
-def cart(request):
+def cart(request,total=0,quantity=0,cart_items=None):
     try:
+        tax=0
+        grandtotal=0
         cart = Carts.objects.get(cart_id=_cart_id(request))
         cart_items = CartItem.objects.filter(cart=cart, is_active=True)
-        total = 0
-        quantity = 0
-
+       
         for cart_item in cart_items:
             total += cart_item.product.marked_price * cart_item.quantity
             quantity += cart_item.quantity
+            cart_item.ram_variations = cart_item.product.variation_set.filter(variation_category='ram', is_active=True)
+            cart_item.size_variations = cart_item.product.variation_set.filter(variation_category='size', is_active=True)
         tax=(2* total)/100
         grandtotal =total+ tax
     except ObjectDoesNotExist:
