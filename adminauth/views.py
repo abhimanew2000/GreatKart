@@ -69,6 +69,27 @@ def delete_category(request, category_id):
         return redirect('categorylist')  # Replace 'category_list' with the URL name of your category list view
     return render(request, 'adminauth/category_delete_confirm.html', {'category': category})
 
+def edit_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+
+    if request.method == 'POST':
+        # Get the updated data from the form
+        title = request.POST.get('title')
+        # You can include other category fields here if you have more fields in the Category model
+
+        # Update the category instance with the new data
+        category.title = title
+        # Assign other fields if needed
+
+        # Save the updated category to the database
+        category.save()
+
+        # After successfully editing, you might want to redirect to the category list page
+        return redirect('categorylist')  # Replace 'categorylist' with the name of the URL pattern for your category list page
+
+    # If it's a GET request, render the edit category form
+    return render(request, 'adminauth/edit_category.html', {'category': category})
+
 def add_product(request):
     if request.method == 'POST':
         title = request.POST.get('title')
@@ -179,7 +200,7 @@ def add_variation(request):
         # Create a new Variation object and save it to the database
         variation = Variation(
             product=product,
-            variation_category=variation_category,
+            variation_category=variation_category, 
             variation_value=variation_value,
             is_active=is_active == 'True'  # Convert 'True'/'False' string to boolean
         )
@@ -203,4 +224,4 @@ def delete_variation(request, variation_id):
         'variation': variation,
     }
 
-    return render(request, 'adminauth/delete_variation.html', context)
+    return render(request, 'adminauth/delete_variation.html')

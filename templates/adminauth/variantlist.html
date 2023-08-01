@@ -34,7 +34,8 @@
                                     </td>
                                     <td>
                                         <!-- Add a delete button for each variation -->
-                                        <button type="submit" href="{% url 'delete_variation' variation.id %}" class="btn btn-danger btn-sm">Delete</button>
+                                        {% comment %} <button type="submit" href="{% url 'delete_variation' variation.id %}" class="btn btn-danger btn-sm">Delete</button> {% endcomment %}
+                                        <a href="{% url 'delete_variation' variation.id %}" class="btn btn-danger">Delete</a>
                                     </td>
                                 </tr>
                             {% endfor %}

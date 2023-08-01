@@ -24,25 +24,17 @@
                         <p>{{ single_product.description }}</p>
                      {% if not is_accessory %}
 						<hr>
+                            <!-- row.// -->
                             <div class="row">
                                 <div class="item-option-select">
-                                    <h6>RAM</h6>
-
-                                    <select name="ram" class="form-control" required>
-										<option value="" disabled selected >RAM</option>
-										{% for i in single_product.variation_set.ram %}
-                                        <option value="{{i.variation_value }}">{{i.variation_value }}</option>
-										{% endfor %}
-                                    </select>
-                                </div>
-                            </div> <!-- row.// -->
-                            <div class="row">
-                                <div class="item-option-select">
-                                    <h6>INTERNAL STORAGE</h6>
-                                    <select name="size" class="form-control" required>
-										<option value="" disabled selected >STORAGE</option>                                        {% for i in single_product.variation_set.sizes %}
-                                        <option value="{{i.variation_value  }}">{{i.variation_value }}</option>
-										{% endfor %}
+                                    <h6>RAM,SIZE</h6>
+                                    <select name="ram,size" class="form-control" required>
+										<option value="" disabled selected >RAM,Size</option>                   
+                                        {% for variation in single_product.variation_set.ramsize %}
+                                        {% if variation.variation_category == 'ram,size' %}
+                                            <option value="{{ variation.variation_value }}">{{ variation.variation_value }}</option>
+                                        {% endif %}
+                                    {% endfor %}
                                     </select>
                                 </div>
                             </div> <!-- row.// -->
@@ -52,7 +44,7 @@
                         {% if single_product.view_count <= 0 %}
                             <h5 class="text-danger">Out of Stock</h5>
                         {% else %}
-                            {% if in_cart %}
+                            {% comment %} {% if in_cart %}
                                 <a href="#" class="btn btn-success">
                                     <span class="text">Added to cart</span>
                                     <i class="fas fa-check"></i>
@@ -61,12 +53,13 @@
                                     <span class="text">view cart</span>
                                     <i class="fas fa-eye"></i>
                                 </a>
-                            {% else %}
+                            {% else %} {% endcomment %}
+
                                 <button type="submit" class="btn btn-primary">
                                     <span class="text">Add to cart</span>
                                     <i class="fas fa-shopping-cart"></i>
                                 </button>
-                            {% endif %}
+                            {% comment %} {% endif %} {% endcomment %}
                         {% endif %}
                     </article>
                 </form> <!-- product-info-aside .// -->

@@ -110,7 +110,8 @@ $(document).ready(function() {
 				{% if request.user.is_authenticated %}
 				<div class="widget-header">
 					<small class="title text-muted">Welcome {{user}}</small>
-					<div>  
+					<div> 
+						<a href="{% url 'dashboard' %}">Dashboard</a> <span class="dark-transp">|</span>
                 
 					<a href="{% url 'handlelogout' %}">Sign out</a> <span class="dark-transp"> | </span>
 				{% else %}

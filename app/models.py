@@ -5,10 +5,9 @@ from django.utils.text import slugify
 from django.urls import reverse
 
 class VariationManager(models.Manager):
-    def ram(self):
-        return super(VariationManager,self).filter(variation_category='ram',is_active=True)
-    def sizes(self):
-        return super(VariationManager,self).filter(variation_category='size',is_active=True)
+    
+    def ramsize(self):
+        return super(VariationManager,self).filter(variation_category='ram,size',is_active=True)
 
 class Category(models.Model):
     title = models.CharField(max_length=200)
@@ -49,8 +48,7 @@ class Product(models.Model):
         return reverse("products_detail",args=[self.category.cat_slug,self.slug])
 
 variation_category_choice=(
-    ('ram','ram'),
-    ('size','size'),
+    ('ram,size','ram,size'),
 ) 
 
 
