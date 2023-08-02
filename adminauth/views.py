@@ -2,6 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login, authenticate
 from userauths.models import User
 from app.models import Category,Product
+from orders.models import Order
 
 # Create your views here.
 
@@ -225,3 +226,13 @@ def delete_variation(request, variation_id):
     }
 
     return render(request, 'adminauth/delete_variation.html')
+
+def orderlist(request):
+    orders = Order.objects.all()
+    for order in orders:
+        print(order)
+    context = {
+        'orders': orders,
+    }
+    return render(request,'adminauth/orderlist.html',context)
+

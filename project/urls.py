@@ -28,6 +28,7 @@ urlpatterns = [
     path('store/',include('store.urls')),
     path('adminauth/', include('adminauth.urls')),
     path('carts/',include('carts.urls')),
+    path('orders/',include('orders.urls')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # if settings.DEBUG:
 #     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

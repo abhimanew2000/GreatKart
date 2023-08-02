@@ -12,6 +12,7 @@ from django.core.mail import send_mail
 from django.contrib.auth.decorators import login_required
 
 from django.contrib import messages
+import requests
 # ----------------------------------Reset password imports-----------------------------------------------------------------------
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
@@ -119,15 +120,53 @@ def handlelogin(request):
                 is_cart_item_exists=CartItem.objects.filter(cart=cart).exists()
                 if is_cart_item_exists:
                     cart_item=CartItem.objects.filter(cart=cart)
-
+                    # getting product variation by cart_id
+                    product_variation=[]
                     for item in cart_item:
-                        item.user=user
-                        item.save()
+                        variation=item.variation.all()
+                        product_variation.append(list(variation))
+
+                     # get the cartitems from the user to access his product variation
+                    cart_item=CartItem.objects.filter(user=user)
+                    ex_var_list=[]
+                    id=[]
+                    for item in cart_item:
+                        existing_variation=item.variation.all()
+                        ex_var_list.append(list(existing_variation))
+                        id.append(item.id)
+                    
+                    for pr in product_variation:
+                        if pr in ex_var_list:
+                            index=ex_var_list.index(pr)
+                            item_id= id [index]
+                            item = CartItem.objects.get(id=item_id)
+                            item.quantity +=1
+                            item.user=user
+                            item.save()
+
+                        else:
+                            cart_item=CartItem.objects.filter(cart=cart)
+                            for item in cart_item:
+                                item.user=user
+                                item.save()
             except:
                 pass
             login(request, user)
             messages.success(request, f"You are logged in")
-            return redirect('index')
+            url = request.META.get("HTTP_REFERER")
+            # the above line will grab previous url
+            try:
+                query=requests.utils.urlparse(url).query
+                print('query-->',query)
+                # next=cart/checkout/
+                params = dict(x.split('=') for x in query.split('&'))
+                # x.split is splitting the = line
+                if 'next' in params:
+                    nextPage = params['next']
+                    return redirect(nextPage)
+            except:
+                return redirect('index')
+
         else:
             messages.warning(request, f"User does not exist")
 

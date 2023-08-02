@@ -17,6 +17,7 @@ urlpatterns = [
     path('add_variation/', views.add_variation, name='add_variation'),
     path('variantlist/', views.variantlist, name='variantlist'),
     path('delete_variation/<int:variation_id>/', views.delete_variation, name='delete_variation'),
+    path('orderlist/', views.orderlist, name="orderlist"),
 
 
 
