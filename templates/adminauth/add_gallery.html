@@ -1,0 +1,28 @@
+{% extends 'adminauth/adminbase.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container pt-4 px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="bg-light rounded p-4">
+                <h6 class="mb-4">Add Gallery Item</h6>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <label for="product">Product:</label>
+                    <select name="product" id="product">
+                        {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.title }}</option>
+                        {% endfor %}
+                    </select>
+                    <br>
+                    <label for="image">Image:</label>
+                    <input type="file" name="image" id="image">
+                    <br>
+                    <button type="submit" class="btn btn-primary mt-3">Add Item</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

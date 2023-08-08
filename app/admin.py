@@ -1,7 +1,8 @@
 from django.contrib import admin
-from app.models import Product,Cart,wishlist,CartProduct,Category,Order,ProductGallery,Variation
+from app.models import Product,Cart,wishlist,CartProduct,Category,ProductGallery,Variation
 # Register your models here.
 from .models import Variation
+
 
 class VariationAdmin(admin.ModelAdmin):
     list_display = ('product', 'variation_category', 'variation_value', 'is_active')
@@ -12,6 +13,6 @@ admin.site.register(Variation, VariationAdmin)
 admin.site.register(Product)
 admin.site.register(Cart)
 admin.site.register(CartProduct)
-admin.site.register(Order)
+
 admin.site.register(Category)
 admin.site.register(ProductGallery)

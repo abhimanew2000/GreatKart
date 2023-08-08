@@ -86,30 +86,33 @@ class CartProduct(models.Model):
 
     def __str__(self):
         return f"Cart {self.cart.id} - CartProduct {self.id}"
+    
 
 
-ORDER_STATUS = (
-    ("Order Received", "Order Received"),
-    ("Order Processing", "Order Processing"),
-    ("On the Way", "On the Way"),
-    ("Order Completed", "Order Completed"),
-    ("Order Cancelled", "Order Cancelled"),
-)
 
 
-class Order(models.Model):
-    cart = models.OneToOneField(Cart, on_delete=models.CASCADE)
-    ordered_by = models.CharField(max_length=200)
-    shipping_address = models.CharField(max_length=200)
-    mobile = models.CharField(max_length=200)
-    email = models.EmailField(null=True, blank=True)
-    subtotal = models.PositiveIntegerField()
-    total = models.PositiveIntegerField()
-    order_status = models.CharField(max_length=200, choices=ORDER_STATUS)
-    created_at = models.DateTimeField(auto_now_add=True)
+# ORDER_STATUS = (
+#     ("Order Received", "Order Received"),
+#     ("Order Processing", "Order Processing"),
+#     ("On the Way", "On the Way"),
+#     ("Order Completed", "Order Completed"),
+#     ("Order Cancelled", "Order Cancelled"),
+# )
 
-    def __str__(self):
-        return f"Order {self.id}"
+
+# class Order(models.Model):
+#     cart = models.OneToOneField(Cart, on_delete=models.CASCADE)
+#     ordered_by = models.CharField(max_length=200)
+#     shipping_address = models.CharField(max_length=200)
+#     mobile = models.CharField(max_length=200)
+#     email = models.EmailField(null=True, blank=True)
+#     subtotal = models.PositiveIntegerField()
+#     total = models.PositiveIntegerField()
+#     order_status = models.CharField(max_length=200, choices=ORDER_STATUS)
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f"Order {self.id}"
 class wishlist(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE)
     product=models.ForeignKey(Product,on_delete=models.CASCADE)
@@ -117,9 +120,9 @@ class wishlist(models.Model):
 
 
 class ProductGallery(models.Model):
-    product=models.ForeignKey(Product,default=None,on_delete=models.CASCADE)
+    product=models.ForeignKey(Product,default=None,on_delete=models.CASCADE,related_name='gallery_images')
     image=models.ImageField(upload_to='products',max_length=255)
-
+    cropped_image = models.BinaryField()   
     def __str__(self) :
         return self.product.title
     class Meta:

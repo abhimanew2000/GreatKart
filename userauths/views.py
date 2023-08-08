@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.conf import settings
 from userauths.models import User
 from carts.models import Carts,CartItem
-
+from orders.models import Order,OrderProduct
 
 import random
 from django.core.mail import send_mail
@@ -114,7 +114,10 @@ def handlelogin(request):
         user = authenticate(request, email=email, password=password)
 
         if user is not None and user.is_blocked==False:
-
+            if user.is_superuser:
+                login(request, user)
+                messages.success(request, "Admin login successful")
+                return redirect('admin_panel')
             try:
                 cart=Carts.objects.get(cart_id=_cart_id(request))
                 is_cart_item_exists=CartItem.objects.filter(cart=cart).exists()
@@ -176,9 +179,59 @@ def handlelogout(request):
     logout(request)
     
     return redirect('index')
-@login_required(login_url='handlelogin')
+# @login_required(login_url='handlelogin')
+# def dashboard(request):
+#     # Retrieve orders for the current user
+#     orders = Order.objects.filter(user=request.user)
+    
+#     context = {
+#         'orders': orders,
+#     }
+#     return render(request, 'userauths/dashboard.html', context)
+
 def dashboard(request):
-    return render(request,'userauths/dashboard.html')
+    # Retrieve orders for the current user
+    orders = Order.objects.filter(user=request.user)
+
+    # Attach the ordered products for each order
+    for order in orders:
+        order.order_products = OrderProduct.objects.filter(order=order)
+    context = {
+        'orders': orders,
+
+    }
+    
+    return render(request, 'userauths/dashboard.html', context)
+
+def view_order(request, order_id):
+    print(order_id)
+    order = get_object_or_404(Order, id=order_id)
+    order_products = OrderProduct.objects.filter(order=order)
+
+    context = {
+        'order': order,
+        'order_products': order_products,
+    }
+
+    return render(request, 'userauths/view_order.html', context)
+
+def cancel_order_product(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    
+    if order.status != 'Cancelled':
+        order.status = 'Cancelled'
+        order.save()
+
+        # Increase view_count for each OrderProduct
+        order_products = OrderProduct.objects.filter(order=order)
+        for order_product in order_products:
+            product = order_product.product
+            product.view_count += order_product.quantity
+            product.save()
+
+    return redirect('view_order', order_id=order.id)
+
+
 
 # --------------------------Reset password view--------------------------------------------------
 User = get_user_model()
@@ -234,6 +287,171 @@ def reset_password_confirm(request, uidb64, token):
     else:
         messages.error(request, 'Invalid password reset link. Please try again.')
         return redirect('handlelogin')
+    
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
+
+@login_required(login_url='handlelogin')
+def profile_information(request):
+    if request.method == 'POST':
+        if 'change_password' in request.POST:
+            # Handle password change form submission
+            current_password = request.POST.get('current_password')
+            new_password1 = request.POST.get('new_password1')
+            new_password2 = request.POST.get('new_password2')
+
+            user = request.user
+            if user.check_password(current_password):
+                if new_password1 == new_password2:
+                    user.set_password(new_password1)
+                    user.save()
+                    update_session_auth_hash(request, user)
+                    messages.success(request, "Password changed successfully.")
+                else:
+                    messages.error(request, "New passwords do not match.")
+            else:
+                messages.error(request, "Incorrect current password.")
+        else:
+            # Handle profile information update form submission
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            phone_number = request.POST.get('phone_number')
+
+            user = request.user
+            user.username = username
+            user.email = email
+            user.first_name = first_name
+            user.last_name = last_name
+            user.phone_number = phone_number
+            user.save()
+
+            messages.success(request, "Profile updated successfully.")
+            
+        return redirect('profile_information')
+
+    context = {
+        'user': request.user,
+    }
+    return render(request, 'userauths/profile_information.html', context)
+
+# --------------------------manage addresses---------------------------------------
+from .models import Address
+def manage_addresses(request):
+    if request.method == 'POST':
+        # Handle the form submission to add a new address
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        address_line_1 = request.POST.get('address_line_1')
+        address_line_2 = request.POST.get('address_line_2', '')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+        postal_code = request.POST.get('postal_code')
+        country = request.POST.get('country')
+
+        # Create a new Address object and save it to the database
+        address = Address(
+            first_name=first_name,
+            last_name=last_name,
+
+            phone=phone,
+            address_line_1=address_line_1,
+            address_line_2=address_line_2,
+            city=city,
+            state=state,
+            postal_code= postal_code,
+            country=country,
+            user=request.user  # Assuming you have implemented authentication
+        )
+        address.save()
+
+        # Redirect to the manage addresses page after adding the new address
+        return redirect('manage_addresses')
+
+    else:
+        # Retrieve the existing addresses for the current user
+        addresses = Address.objects.filter(user=request.user)
+
+        context = {
+            'addresses': addresses
+        }
+        return render(request, 'userauths/manage_addresses.html', context)
+def delete_address(request, address_id):
+    try:
+        address = Address.objects.get(id=address_id)
+        address.delete()
+        # You can add a success message here if you want
+    except Address.DoesNotExist:
+        # Address with the given ID not found, you can handle this error accordingly
+        pass
+    return redirect('manage_addresses')
+
+
+from django.shortcuts import redirect, render, get_object_or_404
+def edit_address(request, address_id):
+    address = get_object_or_404(Address, id=address_id)
+    if request.method == 'POST':
+        # Get the updated values from the POST data
+        address.first_name = request.POST.get('first_name')
+        address.last_name = request.POST.get('last_name')
+        address.email = request.POST.get('email')
+        address.phone = request.POST.get('phone')
+        address.address_line_1 = request.POST.get('address_line_1')
+        address.city = request.POST.get('city')
+        address.state = request.POST.get('state')
+        address.country = request.POST.get('country')
+        address.save()
+        # You can add a success message here if you want
+        return redirect('manage_addresses')
+
+    context = {
+        'address': address,
+        'address_id': address_id,
+    }
+    return render(request, 'userauths/edit_address.html', context)
+
+@login_required(login_url='handlelogin')
+def add_address(request):
+    if request.method == 'POST':
+        # Get the form fields from the POST data
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        address_line_1 = request.POST.get('address_line_1')
+        address_line_2 = request.POST.get('address_line_2')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+        postal_code = request.POST.get('postal_code')
+        country = request.POST.get('country')
+
+        # Get the logged-in user
+        user = request.user
+
+        # Create a new Address object and set the user before saving
+        address = Address(
+            user=user,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone=phone,
+            address_line_1=address_line_1,
+            # address_line_2=address_line_2,
+            city=city,
+            state=state,
+            country=country
+        )
+        address.save()
+
+        # Redirect back to the manage_addresses page
+        return redirect('manage_addresses')
+
+    return render(request, 'userauths/add_address.html')
+
 
 
 

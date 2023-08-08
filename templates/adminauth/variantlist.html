@@ -18,30 +18,30 @@
                                 <th>Product</th>
                                 <th>Variant Category</th>
                                 <th>Variant Value</th>
-                                <th>Is Active</th>
+                                {% comment %} <th>Is Active</th> {% endcomment %}
                                 <th>Action</th> <!-- Add a new column for actions -->
                             </tr>
                         </thead>
                         <tbody>
                             {% for variation in variations %}
                                 <tr>
-                                    <td>{{ variation.product }}</td>
+                                    <td>{{ variation.product.title }}</td>
                                     <td>{{ variation.variation_category }}</td>
                                     <td>{{ variation.variation_value }}</td>
-                                    <td>
+                                    {% comment %} <td>
                                         <!-- Display an editable checkbox to set is_active status -->
                                         <input type="checkbox" name="is_active_{{ variation.id }}" {% if variation.is_active %}checked{% endif %}>
-                                    </td>
+                                    </td> {% endcomment %}
                                     <td>
                                         <!-- Add a delete button for each variation -->
-                                        {% comment %} <button type="submit" href="{% url 'delete_variation' variation.id %}" class="btn btn-danger btn-sm">Delete</button> {% endcomment %}
+                                        <a href="{% url 'edit_variation' variation.id %}" class="btn btn-primary btn-sm">Edit</a>
                                         <a href="{% url 'delete_variation' variation.id %}" class="btn btn-danger">Delete</a>
                                     </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                    <button type="submit" class="btn btn-primary">Update Is Active</button>
+                    {% comment %} <button type="submit" class="btn btn-primary">Update Is Active</button> {% endcomment %}
                 </form>
             </div>
         </div>

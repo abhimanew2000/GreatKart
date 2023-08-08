@@ -3,6 +3,7 @@ from django.contrib.auth import login, authenticate
 from userauths.models import User
 from app.models import Category,Product
 from orders.models import Order
+from app.models import ProductGallery
 
 # Create your views here.
 
@@ -124,6 +125,7 @@ def edit_product(request, product_id):
         product.title = request.POST.get('title')
         product.marked_price = request.POST.get('marked_price')
         product.selling_price = request.POST.get('selling_price')
+        product.view_count=request.POST.get('view_count')
         product.is_available = request.POST.get('is_available') == 'True'
 
         # Update the category if needed
@@ -227,12 +229,113 @@ def delete_variation(request, variation_id):
 
     return render(request, 'adminauth/delete_variation.html')
 
+def edit_variation(request, variation_id):
+    variation = get_object_or_404(Variation, id=variation_id)
+    product_id=variation.product.id
+    print('product_id:',product_id)
+    if request.method == 'POST':
+        title = request.POST.get('product')
+        update_product=Product.objects.get(id=product_id)
+        update_product.title=title
+        print(variation.product.title)
+        variation.variation_category = request.POST.get('variation_category')
+        variation.variation_value = request.POST.get('variation_value')
+        variation.save()
+        update_product.save()
+        # After successfully editing, you might want to redirect to the variation list page
+        return redirect('variantlist')  # Replace 'variationlist' with the name of the URL pattern for your variation list page
+
+    # If it's a GET request, render the edit variation form
+    return render(request, 'adminauth/edit_variation.html', {'variation': variation})
+
 def orderlist(request):
     orders = Order.objects.all()
+    statuses=Order.STATUS
     for order in orders:
         print(order)
     context = {
         'orders': orders,
+        'statuses':statuses
     }
     return render(request,'adminauth/orderlist.html',context)
+
+def manage_orderstatus(request, id):
+    order = get_object_or_404(Order, id=id)
+    
+    if request.method == "POST":
+        order_status = request.POST.get('status')
+        if order_status:
+            order.status = order_status
+            order.save()
+
+        return redirect('orderlist')
+    return render(request, 'adminauth/orderlist.html')
+
+
+def cancel_order(request, order_id):
+    try:
+        order = Order.objects.get(pk=order_id)
+        if order.status == 'New':
+            order.status = 'Cancelled'
+            order.save()
+            # Add any additional logic or processing here, like updating inventory or refunds.
+        return redirect('orderlist')  # Redirect back to the order list page.
+    except Order.DoesNotExist:
+        # Handle if the order doesn't exist or any other errors that may occur.
+        return redirect('orderlist')
+    
+def productgallery_list(request):
+    galleries = ProductGallery.objects.all()
+    context = {
+        'galleries': galleries,
+    }
+    return render(request, 'adminauth/productgallery_list.html', context)
+
+def add_gallery(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product')
+        image = request.FILES.get('image')
+
+        if product_id and image:
+            product = Product.objects.get(id=product_id)
+            gallery_item = ProductGallery(product=product, image=image)
+            gallery_item.save()
+            return redirect('productgallery_list')
+
+    products = Product.objects.all()
+    context = {
+        'products': products,
+    }
+    return render(request, 'adminauth/add_gallery.html', context)
+
+def edit_gallery(request, gallery_id):
+    gallery = get_object_or_404(ProductGallery, id=gallery_id)
+
+    if request.method == 'POST':
+        image_file = request.FILES.get('image')
+        if image_file:
+            gallery.image = image_file
+            gallery.save()
+            return redirect('productgallery_list')
+
+    context = {
+        'gallery': gallery,
+    }
+    return render(request, 'adminauth/edit_gallery.html', context)
+
+
+
+def delete_gallery(request, gallery_id):
+    gallery_item = get_object_or_404(ProductGallery, id=gallery_id)
+
+    if request.method == 'POST':
+        gallery_item.delete()
+        return redirect('productgallery_list')
+
+    context = {
+        'gallery_item': gallery_item,
+    }
+    return render(request, 'adminauth/delete_gallery.html', context)
+
+
 

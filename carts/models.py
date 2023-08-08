@@ -17,7 +17,7 @@ class CartItem(models.Model):
     is_active = models.BooleanField(default=True)
 
     def sub_total(self):
-        return self.product.marked_price * self.quantity
+        return self.product.selling_price * self.quantity
     
     def get_ram_variations(self):
         return self.variation.filter(variation_category='ram', is_active=True)
