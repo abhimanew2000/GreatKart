@@ -1,5 +1,6 @@
 from django.db import models
 from app.models import Product,Variation,User
+
 # Create your models here.
 class Carts(models.Model):
     cart_id = models.CharField(max_length=250,blank=True)
@@ -27,3 +28,18 @@ class CartItem(models.Model):
 
     def __unicode__(self) :
         return str(self.product)
+class Wishlist(models.Model):
+    user= models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    created_at = models.DateField(auto_now_add=True)
+    variation = models.ForeignKey(Variation, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'product', 'variation')
+
+
+    def __str__(self):
+        return f'{self.user.username} - {self.product.title}'
+    
+
+

@@ -19,6 +19,7 @@
                                 <img src="{{ item.product.image.url }}" alt="{{ item.product.title }}" class="mr-3" style="max-width: 50px;">
                                 <div class="media-body">
                                     <h5 class="mt-0 mb-1">{{ item.product.title }}</h5>
+                                    Category: {{ item.product.category.title }}
                                     Quantity: {{ item.quantity }}
                                 </div>
                             </li>
@@ -40,3 +41,5 @@
 </section>
 <!-- ========================= SECTION CONTENT END// ========================= -->
 {% endblock %}
+
+

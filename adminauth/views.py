@@ -2,13 +2,13 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login, authenticate
 from userauths.models import User
 from app.models import Category,Product
-from orders.models import Order
+from orders.models import Order,OrderProduct
 from app.models import ProductGallery
-
+import json
 # Create your views here.
 
-def admin_panel(request):
-    return render(request, 'adminauth/admin_panel.html')
+# def admin_panel(request):
+#     return render(request, 'adminauth/admin_panel.html')
 
 def admin_signin(request):
     if request.method == 'POST':
@@ -297,6 +297,7 @@ def add_gallery(request):
         image = request.FILES.get('image')
 
         if product_id and image:
+            cropped_image = request.FILES.get('cropped_image')  # Get the cropped image data
             product = Product.objects.get(id=product_id)
             gallery_item = ProductGallery(product=product, image=image)
             gallery_item.save()
@@ -325,6 +326,7 @@ def edit_gallery(request, gallery_id):
 
 
 
+
 def delete_gallery(request, gallery_id):
     gallery_item = get_object_or_404(ProductGallery, id=gallery_id)
 
@@ -337,5 +339,31 @@ def delete_gallery(request, gallery_id):
     }
     return render(request, 'adminauth/delete_gallery.html', context)
 
+def admin_panel(request):
+    # Retrieve order data with related product and category
+    orders = OrderProduct.objects.select_related('order__selected_address', 'product__category').all()
 
+    for order in orders:
+        print(order.product.category.title)
+
+    # Process the data and create a dictionary to store counts
+    data_dict = {}  # Dictionary to store counts per category per month
+    
+    for order in orders:
+        month = order.order.created_at.strftime('%b %Y')
+        category = order.product.category.title
+        print("Category:", category)  
+        
+        if month not in data_dict:
+            data_dict[month] = {}
+        
+        if category not in data_dict[month]:
+            data_dict[month][category] = 0
+        
+        data_dict[month][category] += 1
+
+    # Convert data_dict to JSON format
+    data_dict_json = json.dumps(data_dict)
+    
+    return render(request, 'adminauth/admin_panel.html', {'data_dict_json': data_dict_json})
 

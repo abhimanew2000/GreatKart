@@ -2,6 +2,8 @@
 {% load static %}
 {% block content %}
 <!-- ============================ COMPONENT 1 ================================= -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 {% if not cart_items %}
 <h2 class="text-center">Your Shopping Cart is Empty</h2>
 <br>
@@ -90,13 +92,15 @@
 				</dl>
 				<dl class="dlist-align">
 					<dt>Grand Total:</dt>
-					<dd class="text-right text-dark b"><strong>$ {{ grand_total }}</strong></dd>
+					<dd class="text-right text-dark b"><strong>$ {{ grandtotal }}</strong></dd>
 				</dl>
 				<hr>
 				<p class="text-center mb-3">
 					<img src="{% static '/images/misc/payments.png' %}" height="26">
 				</p>
-				<a href="{% url 'checkout' %}" class="btn btn-primary btn-block"> Checkout </a>
+				<a href="{% url 'checkout' grandtotal %}" class="btn btn-primary btn-block"> Checkout </a>
+				{% comment %} <a href="{% url 'checkout_page' grandtotal %}" class="btn btn-primary btn-block"> Checkout </a> {% endcomment %}
+
 				<a href="{% url 'store' %}" class="btn btn-light btn-block">Continue Shopping</a>
 			</div> <!-- card-body.// -->
 		</div> <!-- card.// -->
@@ -107,5 +111,36 @@
 </div> <!-- container .//  -->
 </section>
 <!-- ========================= SECTION CONTENT END// ========================= -->
-
+<script>
+	$(document).ready(function() {
+	  $('.plus-btn, .minus-btn').click(function(event) {
+		event.preventDefault();
+		var formElement = $(this).closest('form');
+		var inputElement = formElement.find('input.form-control');
+		var quantity = parseInt(inputElement.val());
+	
+		if ($(this).hasClass('plus-btn')) {
+		  inputElement.val(quantity + 1);
+		} else if ($(this).hasClass('minus-btn') && quantity > 1) {
+		  inputElement.val(quantity - 1);
+		}
+	
+		updateCartItem(formElement);
+	  });
+	
+	  function updateCartItem(formElement) {
+		$.ajax({
+		  type: formElement.attr('method'),
+		  url: formElement.attr('action'),
+		  data: formElement.serialize(),
+		  success: function(response) {
+			// Update any relevant parts of your page here, e.g. total, tax, grand_total
+		  },
+		  error: function(xhr, status, error) {
+			console.error(error);
+		  }
+		});
+	  }
+	});
+	</script>
 {% endblock %}

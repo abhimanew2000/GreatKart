@@ -142,9 +142,9 @@
                             <!-- row.// -->
                             <div class="row">
                                 <div class="item-option-select">
-                                    <h6>RAM,SIZE</h6>
+                                    <h6>RAM, SIZE</h6>
                                     <select name="ram,size" class="form-control" required>
-                                        <option value="" disabled selected >RAM,Size</option>                   
+                                        <option value="" disabled selected >RAM, Size</option>                   
                                         {% for variation in single_product.variation_set.ramsize %}
                                             {% if variation.variation_category == 'ram,size' %}
                                                 <option value="{{ variation.variation_value }}">{{ variation.variation_value }}</option>
@@ -159,28 +159,24 @@
                         {% if single_product.view_count <= 0 %}
                             <h5 class="text-danger">Out of Stock</h5>
                         {% else %}
-                            {% comment %} {% if in_cart %}
-                                <a href="#" class="btn btn-success">
-                                    <span class="text">Added to cart</span>
-                                    <i class="fas fa-check"></i>
-                                </a>
-                                <a href="{% url 'cart' %}" class="btn btn-outline-primary">
-                                    <span class="text">view cart</span>
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            {% else %} {% endcomment %}
-
-                                <button type="submit" class="btn btn-primary">
-                                    <span class="text">Add to cart</span>
-                                    <i class="fas fa-shopping-cart"></i>
-                                </button>
-                            {% comment %} {% endif %} {% endcomment %}
+                            <button type="submit" class="btn btn-primary">
+                                <span class="text">Add to Cart</span>
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
                         {% endif %}
                     </article>
-                </form> <!-- product-info-aside .// -->
-            </main> <!-- col.// -->
-        </div> <!-- row.// -->
-    </div> <!-- card.// -->
+                </form>
+                {% comment %} <form action="{% url 'add_to_wishlist' variation.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary mt-2">
+                        <span class="text">Add to Wishlist</span>
+                        <i class="fas fa-heart"></i>
+                    </button> {% endcomment %}
+                    
+                </form>
+            </main>
+        </div>
+    </div>
     <!-- ============================ COMPONENT 1 END .// ================================= -->
 
     <br>
@@ -317,63 +313,5 @@
         mainImage.src = newImageSrc;
     }
 </script>
-
-{% comment %} <script>
-    // Function to handle the zoom effect
-    function handleZoom(event) {
-        const imageContainer = event.currentTarget;
-        const image = imageContainer.querySelector('.zoom-image');
-        const zoomCircle = imageContainer.querySelector('.zoom-circle');
-
-        // Get the position of the mouse pointer relative to the image container
-        const rect = imageContainer.getBoundingClientRect();
-        const offsetX = event.clientX - rect.left;
-        const offsetY = event.clientY - rect.top;
-
-        // Check if the mouse pointer is within the image boundaries
-        if (
-            offsetX >= 0 && offsetX <= image.width &&
-            offsetY >= 0 && offsetY <= image.height
-        ) {
-            // Calculate the position of the zoom circle and set its size
-            const circleSize = 100; // Adjust this value to change the size of the zoom circle
-            const circleX = offsetX - circleSize / 2;
-            const circleY = offsetY - circleSize / 2;
-
-            // Apply the zoom effect by changing the scale of the image and zoom circle
-            image.style.transformOrigin = `${offsetX}px ${offsetY}px`;
-            image.style.transform = 'scale(2.2)';
-
-            zoomCircle.style.width = circleSize + 'px';
-            zoomCircle.style.height = circleSize + 'px';
-            zoomCircle.style.left = circleX + 'px';
-            zoomCircle.style.top = circleY + 'px';
-            zoomCircle.style.transform = 'scale(2)'; // Adjust this value to change the zoom circle's zoom level
-        } else {
-            // Hide the zoom circle if the mouse is outside the image boundaries
-            zoomCircle.style.transform = 'scale(1)';
-            image.style.transform = 'scale(1)';
-        }
-    }
-
-    // Function to reset the zoom effect
-    function resetZoom(event) {
-        const imageContainer = event.currentTarget;
-        const image = imageContainer.querySelector('.zoom-image');
-        const zoomCircle = imageContainer.querySelector('.zoom-circle');
-
-        image.style.transform = 'scale(1)';
-        zoomCircle.style.transform = 'scale(1)';
-    }
-
-    // Attach event listeners to the image container
-    const imageContainers = document.querySelectorAll('.zoom-image-container');
-    imageContainers.forEach(container => {
-        container.addEventListener('mousemove', handleZoom);
-        container.addEventListener('mouseleave', resetZoom);
-    });
-</script> {% endcomment %}
-
-
 
 {% endblock %}

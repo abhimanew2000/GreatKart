@@ -1,5 +1,5 @@
 from django.contrib import admin
-from app.models import Product,Cart,wishlist,CartProduct,Category,ProductGallery,Variation
+from app.models import Product,Cart,CartProduct,Category,ProductGallery,Variation
 # Register your models here.
 from .models import Variation
 

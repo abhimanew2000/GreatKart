@@ -5,9 +5,17 @@ from django.core.exceptions import ObjectDoesNotExist
 from app.models import Variation
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-import datetime
-from orders.models import Order,OrderProduct
-
+from userauths.models import Address
+from orders.models import Order,OrderProduct,Payment
+import razorpay
+from django.conf import settings
+from django.http import JsonResponse
+import json
+from django.views.decorators.csrf import csrf_exempt
+import requests
+import hmac
+import hashlib
+import logging
 # Create your views here.
 
 def _cart_id(request):
@@ -227,94 +235,87 @@ def remove_cart_item(request, product_id,cart_item_id):
     # cart_item.delete()
     # return redirect('cart')
 
-# def cart(request,total=0,quantity=0,cart_items=None):
-#     try:
-#         if request.user.is_authenticated:
-#             cart_items=CartItem.objects.filter(user=request.user,is_active=True)
-#         else:
-#             cart=Carts.objects.get(cart_id=_cart_id(request))
-#             cart_items=CartItem.objects.filter(cart=cart,is_active=True)
-#         for cart_item in cart_items:
-#             total += (cart_item.product.selling_price*cart_item.quantity)
-#             print(total)
-#             quantity += cart_item.quantity
-#             print(total)
-#         tax=(2* total)/100
-#         grandtotal =total+ tax
-#     except ObjectDoesNotExist:
-#         pass
-
-    
-    
-
-#     context = {
-#         'total': total,
-#         'quantity': quantity,
-#         'cart_items': cart_items,
-#         'tax':tax,
-#         'grandtotal':grandtotal,
-#     }
-#     return render(request, 'store/cart.html', context)
-
-def cart(request):
+def cart(request,total=0,quantity=0,cart_items=None):
     try:
-        total=0
-        quantity=0
-        tax = 0
-        grand_total = 0
-        cart_items = [] 
+        tax=0
+        grandtotal=0
         if request.user.is_authenticated:
-            cart_items = CartItem.objects.filter(user=request.user, is_active=True)
+            cart_items=CartItem.objects.filter(user=request.user,is_active=True)
         else:
-            cart = Carts.objects.get(cart_id=_cart_id(request))
-            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+            cart=Carts.objects.get(cart_id=_cart_id(request))
+            cart_items=CartItem.objects.filter(cart=cart,is_active=True)
         for cart_item in cart_items:
-            print(f"Product: {cart_item.product.title}, Quantity: {cart_item.quantity}")
-
-        for cart_item in cart_items:
-            total += (cart_item.product.selling_price * cart_item.quantity)  
+            total += (cart_item.product.selling_price*cart_item.quantity)
             quantity += cart_item.quantity
-        tax = (2 * total)/100
-        grand_total = total + tax
+        tax=(2* total)/100
+        grandtotal =total+ tax
     except ObjectDoesNotExist:
-        pass #just ignore
+        pass
+
+    # try:
+    #     tax=0
+    #     grandtotal=0
+    #     if request.user.is_authenticated:
+    #         cart_items=CartItem.objects.filter(user=request.user,is_active=True)
+    #         print(cart)
+    #     else:
+    #         cart = Carts.objects.get(cart_id=_cart_id(request))
+    #         cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+       
+    #     for cart_item in cart_items:
+    #         print('varient=',cart_item.variation)
+    #         total += cart_item.product.marked_price * cart_item.quantity
+    #         quantity += cart_item.quantity
+            
+    #     tax=(2* total)/100
+    #     grandtotal =total+ tax
+        
+    # except ObjectDoesNotExist:
+    #     pass
+    
 
     context = {
         'total': total,
         'quantity': quantity,
         'cart_items': cart_items,
-        'tax'       : tax,
-        'grand_total': grand_total,
+        'tax':tax,
+        'grandtotal':int(grandtotal),
     }
+    print(context,"22222222222")
     return render(request, 'store/cart.html', context)
 
-from userauths.models import Address
 
-from django.contrib import messages
-
+RAZORPAY_KEY_ID = 'rzp_test_4o90y50Nv7s1jR'
+RAZORPAY_KEY_SECRET = 'nlmYaIYmAyx29rc3BUZSmDRu'
 
 @login_required(login_url='handlelogin')
-def checkout(request):
+def checkout(request,grandtotal,total=0,quantity=0,cart_items=None,):
     current_user = request.user
     cart_items = CartItem.objects.filter(user=current_user, is_active=True)
     cart_count = cart_items.count()
     if cart_count <= 0:
         return redirect('store')
+    print(grandtotal)
 
-    grand_total = 0
+    grand_total = grandtotal
     for cart_item in cart_items:
+        print(cart_item.quantity)
+        print(cart_item.product.selling_price)
+
         grand_total += cart_item.product.selling_price* cart_item.quantity
     tax = (2 * grand_total) / 100
     grand_total += tax
-
+    print('grand_total',grand_total)
     addresses = Address.objects.filter(user=current_user)
 
-    if request.method == 'POST':
-        selected_address_id = request.POST.get('selected_address')
-        print('selected address:', selected_address_id) 
-        grand_total = float(request.POST.get('grand_total', 0))
+    
 
-        # Retrieve the selected address and user objects
+    if request.method == 'POST':      
+        selected_address_id = request.POST.get('selected_address')
+        payment_id=request.POST.get('payment_id')
+        print('paymentid',payment_id)
+        print('selected address is :', selected_address_id) 
+        # grand_total = int(request.POST.get('grand_total', 0))
         try:
             selected_address = Address.objects.get(pk=int(selected_address_id), user=request.user)
         except Address.DoesNotExist:
@@ -325,7 +326,7 @@ def checkout(request):
             user=request.user,
             tax=tax,
             selected_address=selected_address,
-            order_total=grand_total,
+            order_total=grandtotal,
             status='New',  # Set the status to 'New' for a new order
             
         )
@@ -345,41 +346,59 @@ def checkout(request):
         cart_items.delete()
 
         # Here you can add additional logic to handle the cart items and payment
-
+        payMode=request.POST.get('payment_method')
+        if payMode=="razorpay":
+            return JsonResponse({'status':"Order Placed successfully"})
         return redirect('order_success',id=order.id)  # Redirect to a success page after placing the order
-
-    # Get the user's addresses to display in the template
-    # addresses = Address.objects.filter(user=request.user)
+    
+    
+    # order_id = create_razorpay_order(grandtotal)
     context = {
-        'addresses': addresses,
+        'total': total,
+        'quantity': quantity,
         'cart_items': cart_items,
-        'grand_total': grand_total,
+        'tax':tax,
+        'grandtotal':int(grandtotal),
+        'addresses': addresses,
+        # 'order_id': order_id,
     }
-
-    return render(request, 'store/checkout.html', context)
     
 
+    return render(request,'store/checkout.html',context)
 
-from django.http import JsonResponse
 
-def update_cart_quantity(request):
-    if request.method == 'POST':
-        cart_item_id = request.POST.get('cart_item_id')
-        action = request.POST.get('action')
+def success_view(request):
+    order_id = request.session.get('order_id')  # Change this based on your logic
+    order = get_object_or_404(Order, id=order_id)
+    order_products = OrderProduct.objects.filter(order=order)
 
-        try:
-            cart_item = CartItem.objects.get(id=cart_item_id)
-            if action == 'plus':
-                cart_item.quantity += 1
-            elif action == 'minus' and cart_item.quantity > 1:
-                cart_item.quantity -= 1
-            cart_item.save()
+    context = {
+        'order': order,
+        'order_products': order_products,
+    }
+    return render(request, 'store/success.html')
+import razorpay
+import logging
 
-            # Calculate the new subtotal for the cart item (if needed)
-            # Your logic here...
 
-            return JsonResponse({'quantity': cart_item.quantity, 'sub_total': cart_item.sub_total})
-        except CartItem.DoesNotExist:
-            pass
 
-    return JsonResponse({}, status=400)  # Return an empty JSON response with a 400 status code for error.
+
+
+@login_required
+def razorpaycheck(request):
+    current_user = request.user
+    cart_items= CartItem.objects.filter(user=current_user)
+    total_price=0
+    for item in cart_items:
+        total_price = total_price + item.product.selling_price * item.quantity
+    tax = (2 * total_price) / 100
+    total_price+=tax
+
+    return JsonResponse({
+        'total_price':int(total_price),
+
+    })
+def myorders(request):
+    return HttpResponse("my orders page")
+
+

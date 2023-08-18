@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'adminauth',
     'carts',
     'orders',
+    'image_cropping',
 ]
 
 MIDDLEWARE = [
@@ -161,3 +162,7 @@ EMAIL_HOST_PASSWORD = 'skbebikgthwfaufn'  # Your email password
 
 # Default sender email (used as "From" address in emails)
 DEFAULT_FROM_EMAIL = 'abhimanew2000@gmail.com'  # Replace with your Gmail email address
+
+
+RAZORPAY_KEY_ID = 'rzp_test_4o90y50Nv7s1jR'
+RAZORPAY_KEY_SECRET = 'nlmYaIYmAyx29rc3BUZSmDRu'

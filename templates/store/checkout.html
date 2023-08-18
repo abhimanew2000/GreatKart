@@ -15,7 +15,7 @@
                             <i class="fas fa-plus"></i> Add Address
                         </a>
 
-                        <form action="{% url 'checkout' %}" method="post">
+                        <form action="{% url 'checkout' grandtotal %}" method="post">
                             {% csrf_token %}
 
                             <!-- Display the selected address details -->
@@ -52,7 +52,7 @@
 
                             {% if addresses %}
                                 <!-- Add a hidden input field to include the grand_total in the form data -->
-                                <input type="hidden" name="grand_total" value="{{ grand_total }}">
+                                <input type="hidden" name="grand_total" value="{{ grandtotal }}">
 
                                 <!-- Hidden inputs for the other fields -->
                                 <input type="hidden" name="order_number" value="{{ order_number }}">
@@ -63,14 +63,16 @@
                                 <input type="hidden" name="is_ordered" value="{{ is_ordered }}">
                                 <input type="hidden" name="created_at" value="{{ created_at }}">
                                 <input type="hidden" name="updated_at" value="{{ updated_at }}">
-
+                                <input type="hidden" name="payment_method" value="">  <!-- Add this field -->
                                 <button type="submit" name="submit" class="btn btn-success btn-block">COD/Place Order</button>
                             {% else %}
                                 <p>Please add an address before placing the order.</p>
                             {% endif %}
-
-                            <a href="{% url 'store' %}" class="btn btn-light btn-block">Continue Shopping</a>
+                            
+                            <button id="razorpay-btn" class="btn btn-info btn-block razorpay" data-order-id="{{ order_id }}">Pay with Razorpay</button>
                         </form>
+                            <a href="{% url 'store' %}" class="btn btn-light btn-block">Continue Shopping</a>
+                        
                     </div>
                 </div>
             </div>
@@ -116,9 +118,9 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="price-wrap">
-                                            <var class="price">$ {{ grand_total|floatformat:2 }}</var>
-                                        </div>
+                                        {% comment %} <div class="price-wrap">
+                                            <var class="price">$ {{ grandtotal|floatformat:2 }}</var>
+                                        </div> {% endcomment %}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -127,7 +129,7 @@
 
                         <!-- Display the Grand Total Price -->
                         <div class="text-right">
-                            <h4>Total: $ {{ grand_total|floatformat:2 }}</h4>
+                            <h4>Total: $ {{ grandtotal|floatformat:2 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -135,4 +137,96 @@
         </div>
     </div>
 </section>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> {% endcomment %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.1.5/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.1.5/dist/sweetalert2.min.js"></script>
+
+<script>
+    var myOrdersUrl = "{% url 'myorders' id %}";
+    $(document).ready(function () {
+    
+    $('#razorpay-btn').click(function (e) {
+        e.preventDefault();
+
+        //{% comment %} var name = $("[name='user']").val(); {% endcomment %}
+        var address = $("[name='selected_address']").val();
+        var token = $("[name='csrfmiddlewaretoken']").val();
+
+        if ( selected_address =="")
+        {
+            alert("No user exist")
+            return false ;
+        }
+        else
+        {
+           $.ajax({
+            method :"GET",
+            url:"{% url 'razorpaycheck' %}",
+            success:function(response){
+                console.log(response)
+                var options = {
+                    key: "rzp_test_4o90y50Nv7s1jR",
+                    amount: response.total_price * 100, 
+                    currency: "INR",
+                    name: "GreatKart",
+                    description: "Thankyou for buy",
+                    image: "https://example.com/your_logo",
+                    // order_id: "{{order.provider_order_id}}",
+                     handler:function(responseb){
+                        var selected_address = $("[name='selected_address']:checked").val();  // Capture selected address
+                         var token = $("[name='csrfmiddlewaretoken']").val();
+                        alert(responseb.razorpay_payment_id);
+                        data={
+                            "selected_address": selected_address,
+                            "payment_method":"razorpay",
+                            "payment_id":responseb.razorpay_payment_id,
+                            csrfmiddlewaretoken:token
+                        }
+                        $.ajax({
+                            method:"POST",
+                            url: "{% url 'checkout' grandtotal=0 %}".replace('0', response.total_price),
+                            data:data,
+                            success:function(response){
+                                console.log("Response from server:", response.status);
+                                if (response.status == "Order Placed successfully") {
+                                    console.log("Order successfully placed. Redirecting to myorders.");
+                                   // swal("Congratulations", response.status, "Order successfully placed", "success").then((value) => {
+                                        console.log("SweetAlert callback executed");
+                                        console.log("Redirecting to:", myOrdersUrl);
+                                    
+                                        // Redirect to the myorders page
+                                        window.location.href = myOrdersUrl;
+                                  //  });
+                                    
+                            }
+                            else {
+                                swal("Error", "There was an issue placing the order.", "error");
+                            }
+                            }
+                        })
+                    },
+                     prefill: {
+                         "name": selected_address,
+                     },
+                     theme: {
+                         "color": "#3399cc"
+                     }
+                 };
+                 var rzp1 = new Razorpay(options); // Initialize Razorpay with 'new'                
+                 rzp1.open();
+
+            }
+           })
+       
+        }
+
+
+    });
+});
+</script>
+
 {% endblock %}
+

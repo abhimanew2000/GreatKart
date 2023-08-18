@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>My Wishlist</h1>
+    <ul>
+        {% for item in wishlist_items %}
+            <li>
+                {{ item.product.title }} - {{ item.variation.variation_value }}
+                <a href="#">Remove</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
