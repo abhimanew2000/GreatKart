@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404,redirect
 from app.models import Product, Category
 from carts.models import CartItem,Carts
 from carts.views import _cart_id
@@ -40,6 +40,13 @@ def product_detail(request, cat_slug, slug):
         is_accessory = single_product.category.title == "Accessories"  # Check if the product belongs to the "Accessory" category
         images = single_product.gallery_images.all() 
 
+        search_query = request.GET.get('q')
+        if search_query:
+            matching_product = Product.objects.filter(title__icontains=search_query).first()
+            if matching_product:
+                return redirect('product_detail', category.cat_slug, matching_product.slug)
+
+
 
     except Exception as e:
         raise e
@@ -50,33 +57,50 @@ def product_detail(request, cat_slug, slug):
         'is_accessory': is_accessory,
         'category': category,
         'images': images,
+        
+
     }
     return render(request, 'store/product_detail.html', context)
 
-def search(request):
+# def search(request):
+    # search_query = request.GET.get('q')
+    # print("Search Query:", search_query)
+
+
+    # if search_query:
+    #     products = Product.objects.filter(
+    #         Q(title__icontains=search_query) | Q(description__icontains=search_query),
+    #         is_available=True
+    #     )
+    #     print("Matching Products:", products)
+
+    #     paginator = Paginator(products, 3)
+    #     page = request.GET.get('page')
+    #     paged_products = paginator.get_page(page)
+    #     product_count = products.count()
+    # else:
+    #     paged_products = []
+    #     product_count = 0
+
+    # context = {
+    #     'products': paged_products,
+    #     'product_count': product_count,
+    #     'search_query': search_query,
+    # }
+
+    # return render(request, 'store/search.html', context)
+
+def search_results(request):
     search_query = request.GET.get('q')
-    print("Search Query:", search_query)
-
-
+    
     if search_query:
-        products = Product.objects.filter(
-            Q(title__icontains=search_query) | Q(description__icontains=search_query),
-            is_available=True
-        )
-        print("Matching Products:", products)
-
-        paginator = Paginator(products, 3)
-        page = request.GET.get('page')
-        paged_products = paginator.get_page(page)
-        product_count = products.count()
+        # Use your own logic to search for products by title
+        products = Product.objects.filter(title__icontains=search_query)
+        
+        context = {
+            'search_query': search_query,
+            'products': products,
+        }
+        return render(request, 'store/product_detail.html', context)
     else:
-        paged_products = []
-        product_count = 0
-
-    context = {
-        'products': paged_products,
-        'product_count': product_count,
-        'search_query': search_query,
-    }
-
-    return render(request, 'store/search.html', context)
+        return redirect('store')

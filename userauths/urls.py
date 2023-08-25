@@ -20,6 +20,11 @@ urlpatterns = [
     path('view_order/<int:order_id>/', views.view_order, name='view_order'),
     path('cancel_order_product/<int:order_id>/', views.cancel_order_product, name='cancel_order_product'),
 
+    path('invoice/<int:order_id>/', views.invoice_view, name='invoice'),
+    path('download_invoice/<int:order_id>/', views.download_invoice, name='download_invoice'),
+
+
+
 
 
 

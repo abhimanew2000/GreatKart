@@ -6,24 +6,47 @@
     <title>Order Category Graph</title>
     <!-- Include necessary CSS/JS libraries for charting (e.g., Chart.js) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <style>
+        /* Add any custom styles here */
+    </style>
 </head>
 <body>
-    <h1>Order Category Graph</h1>
+    <h1 class="text-center mt-4">Order Category Graph</h1>
+
+    <form class="text-center mb-4" method="get">
+        <label class="me-2">Choose Interval:</label>
+        <input type="radio" name="interval" value="monthly" class="me-1" {% if interval == 'monthly' %}checked{% endif %}> Monthly
+        <input type="radio" name="interval" value="yearly" class="me-1" {% if interval == 'yearly' %}checked{% endif %}> Yearly
+        <input type="radio" name="interval" value="weekly" class="me-1" {% if interval == 'weekly' %}checked{% endif %}> Weekly
+        <button type="submit" class="btn btn-primary">Apply</button>
+    </form>
     
     <!-- Include a placeholder for the chart -->
-    <div style="display: flex; justify-content: space-between;">
-        <!-- Include a placeholder for the bar chart -->
-        <div style="width: 59%;">
-            <canvas id="orderCategoryChart" width="400" height="200"></canvas>
-        </div>
+    <div class="container">
+        <div class="row">
+            <!-- Include a placeholder for the bar chart -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Bar Chart</h2>
+                        <canvas id="orderCategoryChart" width="100" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
         
-        <!-- Include a placeholder for the pie chart -->
-        <div style="width: 39%;">
-            <canvas id="orderCategoryPieChart" width="400" height="200"></canvas>
+            <!-- Include a placeholder for the pie chart -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Pie Chart</h2>
+                        <canvas id="orderCategoryPieChart" width="100" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
         
+    <!-- Rest of your JavaScript code for generating the charts -->
     <script>
         // JavaScript code to generate the chart using data_dict
         // You can use libraries like Chart.js to create the chart
@@ -88,8 +111,6 @@ function getRandomColor() {
     return color;
 }
     </script>
+
 </body>
-
-
-           
 {% endblock %}

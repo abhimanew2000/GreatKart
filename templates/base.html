@@ -100,7 +100,7 @@ $(document).ready(function() {
             </div>
         </form><!-- search-wrap .end// -->
 	</div> <!-- col.// -->
-	...
+	
 <div class="col-lg-3 col-sm-6 col-8 order-2 order-lg-3">
     <div class="d-flex justify-content-end mb-3 mb-lg-0">
         {% comment %} <div class="widget-header">
@@ -110,9 +110,9 @@ $(document).ready(function() {
 				<div class="widget-header">
 					<small class="title text-muted">Welcome {{user}}</small>
 					<div> 
-						<a href="{% url 'dashboard' %}">Dashboard</a> <span class="dark-transp">|</span>
+						<a href="{% url 'dashboard' %}">Profile</a> <span class="dark-transp">|</span>
                 
-					<a href="{% url 'handlelogout' %}">Sign out</a> <span class="dark-transp"> | </span>
+					<a href="{% url 'handlelogout' %}">Sign out</a> <span class="dark-transp">  </span>
 				{% else %}
 				<div class="widget-header">
 					<small class="title text-muted">Welcome Guest</small>
@@ -126,6 +126,11 @@ $(document).ready(function() {
             <div class="icon icon-sm rounded-circle border"><i class="fa fa-shopping-cart"></i></div>
             <span class="badge badge-pill badge-danger notify">{{cart_count}}</span>
         </a>
+        <a href="{% url 'wishlist' %}" class="widget-header pl-3 ml-3">
+            <div class="icon icon-sm rounded-circle border" style="font-size: 14px;"><i class="fa fa-heart"></i></div>
+            <span class="badge badge-pill badge-danger notify">{{ wishlist_count }}</span>
+        </a>
+        
     </div> <!-- widgets-wrap.// -->
 </div> <!-- col.// -->
 ...
@@ -169,6 +174,7 @@ $(document).ready(function() {
             </section>
         </div><!-- //container -->
     </footer>
+    
     <!-- ========================= FOOTER END // ========================= -->
     
 

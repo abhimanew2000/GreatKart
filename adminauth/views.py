@@ -5,6 +5,9 @@ from app.models import Category,Product
 from orders.models import Order,OrderProduct
 from app.models import ProductGallery
 import json
+from django.utils import timezone
+from carts.models import Coupon
+
 # Create your views here.
 
 # def admin_panel(request):
@@ -339,31 +342,134 @@ def delete_gallery(request, gallery_id):
     }
     return render(request, 'adminauth/delete_gallery.html', context)
 
+# def admin_panel(request):
+#     # Retrieve order data with related product and category
+#     orders = OrderProduct.objects.select_related('order__selected_address', 'product__category').all()
+
+#     for order in orders:
+#         print(order.product.category.title)
+
+#     # Process the data and create a dictionary to store counts
+#     data_dict = {}  # Dictionary to store counts per category per month
+    
+#     for order in orders:
+#         month = order.order.created_at.strftime('%b %Y')
+#         category = order.product.category.title
+#         print("Category:", category)  
+        
+#         if month not in data_dict:
+#             data_dict[month] = {}
+        
+#         if category not in data_dict[month]:
+#             data_dict[month][category] = 0
+        
+#         data_dict[month][category] += 1
+
+#     # Convert data_dict to JSON format
+#     data_dict_json = json.dumps(data_dict)
+    
+#     return render(request, 'adminauth/admin_panel.html', {'data_dict_json': data_dict_json})
 def admin_panel(request):
     # Retrieve order data with related product and category
     orders = OrderProduct.objects.select_related('order__selected_address', 'product__category').all()
 
-    for order in orders:
-        print(order.product.category.title)
-
     # Process the data and create a dictionary to store counts
-    data_dict = {}  # Dictionary to store counts per category per month
-    
+    data_dict = {}  # Dictionary to store counts per category per interval
+
+    interval = request.GET.get('interval', 'monthly')  # Get the selected interval (default: monthly)
+    current_datetime = timezone.now()
+
     for order in orders:
-        month = order.order.created_at.strftime('%b %Y')
+        if interval == 'monthly':
+            time_period = order.order.created_at.strftime('%b %Y')  # Monthly interval
+        elif interval == 'yearly':
+            time_period = order.order.created_at.strftime('%Y')  # Yearly interval
+        elif interval == 'weekly':
+            time_period = f"Week {current_datetime.strftime('%U')}, {current_datetime.year}"  # Weekly interval
+        else:
+            # Default to monthly if interval is not recognized
+            time_period = order.order.created_at.strftime('%b %Y')
+        
         category = order.product.category.title
-        print("Category:", category)  
         
-        if month not in data_dict:
-            data_dict[month] = {}
+        if time_period not in data_dict:
+            data_dict[time_period] = {}
         
-        if category not in data_dict[month]:
-            data_dict[month][category] = 0
+        if category not in data_dict[time_period]:
+            data_dict[time_period][category] = 0
         
-        data_dict[month][category] += 1
+        data_dict[time_period][category] += 1
 
     # Convert data_dict to JSON format
     data_dict_json = json.dumps(data_dict)
     
     return render(request, 'adminauth/admin_panel.html', {'data_dict_json': data_dict_json})
 
+def sales_report(request):
+    sales_report = Order.objects.all()  # Replace with your actual query
+    print(sales_report)  # Debug print
+    return render(request, 'adminauth/reports.html', {'sales_report': sales_report})
+
+def cancel_report(request):
+    search_keyword = request.GET.get('search')
+    cancelled_orders = Order.objects.filter(status='Cancelled')
+    
+    if search_keyword:
+        cancelled_orders = cancelled_orders.filter(user__first_name__icontains=search_keyword)
+    
+    return render(request, 'adminauth/cancel_report.html', {'cancelled_orders': cancelled_orders})
+
+def stock_report(request):
+    stock = Product.objects.all()
+    context={
+        'stock':stock,
+    }
+
+    return render(request,'adminauth/stockreport.html',context)
+
+
+def coupon_list(request):
+    coupons = Coupon.objects.all()
+    return render(request, 'adminauth/couponlist.html', {'coupons': coupons})
+
+
+def add_coupon(request):
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        discount = int(request.POST.get('discount'))
+        expiration_date = request.POST.get('expiration_date')
+        is_active = request.POST.get('is_active') == 'on'  # Checkbox handling
+        
+        coupon = Coupon.objects.create(
+            code=code,
+            discount=discount,
+            expiration_date=expiration_date,
+            is_active=is_active
+        )
+        
+        return redirect('couponlist')
+    
+    return render(request, 'adminauth/add_coupon.html')
+
+def delete_coupon(request, pk):
+    coupon = get_object_or_404(Coupon, pk=pk)
+    
+    if request.method == 'POST':
+        coupon.delete()
+        return redirect('couponlist')
+    
+    return render(request, 'adminauth/delete_coupon.html', {'coupon': coupon})
+
+def edit_coupon(request, pk):
+    coupon = get_object_or_404(Coupon, pk=pk)
+    
+    if request.method == 'POST':
+        coupon.code = request.POST.get('code')
+        coupon.discount = int(request.POST.get('discount'))
+        coupon.expiration_date = request.POST.get('expiration_date')
+        coupon.is_active = request.POST.get('is_active') == 'on'
+        coupon.save()
+        
+        return redirect('couponlist')
+    
+    return render(request, 'adminauth/edit_coupon.html', {'coupon': coupon})

@@ -29,6 +29,21 @@ urlpatterns = [
 
 
 
+    path('sales_report/', views.sales_report, name='sales_report'),
+    path('cancel_report/', views.cancel_report, name='cancel_report'),
+    path('stock_report/', views.stock_report, name='stock_report'),
+
+
+    path('coupons/', views.coupon_list, name='couponlist'),
+    path('coupon/add/', views.add_coupon, name='add_coupon'),  # Add this line
+
+    path('coupon/<int:pk>/', views.edit_coupon, name='edit_coupon'),  # Add this line
+    path('coupon/<int:pk>/delete/', views.delete_coupon, name='delete_coupon'),
+
+
+
+
+
 
 
 

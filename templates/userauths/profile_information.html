@@ -16,6 +16,7 @@
                         <p><strong>Last Name:</strong> {{ user.last_name }}</p>
                         <p><strong>Email:</strong> {{ user.email }}</p>
                         <p><strong>Phone Number:</strong> {{ user.phone_number }}</p>
+                        <p><strong>Wallet Balance:</strong> {{ user_wallet.balance }}</p>
                         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editProfileModal">Edit Profile</button>
                         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#changePasswordModal">Change Password</button>
                     </div>
@@ -47,49 +48,21 @@
         </div>
     </div>
 </section>
-{% comment %} <section class="section-conten padding-y bg">
+<!-- Wallet Balance Section -->
+<section class="section-content padding-y bg">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Profile Information</h5>
-                        <p><strong>Username:</strong> {{ user.username }}</p>
-                        <p><strong>First Name:</strong> {{ user.first_name }}</p>
-                        <p><strong>Last Name:</strong> {{ user.last_name }}</p>
-                        <p><strong>Email:</strong> {{ user.email }}</p>
-                        <p><strong>Phone Number:</strong> {{ user.phone_number }}</p>
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editProfileModal">Edit Profile</button>
+                        <h5 class="card-title">Wallet Balance</h5>
+                        <p><strong>Your current wallet balance:</strong> ${{ user_wallet.balance }}</p>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="row justify-content-center mt-4">
-            <div class="col-md-8">
-                <h5 class="card-title">FAQs</h5>
-                <ul>
-                    <li>
-                        <strong>What happens when I update my email address (or mobile number)?</strong>
-                        Your login email id (or mobile number) changes, likewise. You'll receive all your account related communication on your updated email address (or mobile number).
-                    </li>
-                    <li>
-                        <strong>When will my Flipkart account be updated with the new email address (or mobile number)?</strong>
-                        It happens as soon as you confirm the verification code sent to your email (or mobile) and save the changes.
-                    </li>
-                    <li>
-                        <strong>What happens to my existing Flipkart account when I update my email address (or mobile number)?</strong>
-                        Updating your email address (or mobile number) doesn't invalidate your account. Your account remains fully functional. You'll continue seeing your Order history, saved information, and personal details.
-                    </li>
-                    <li>
-                        <strong>Does my Seller account get affected when I update my email address?</strong>
-                        Flipkart has a 'single sign-on' policy. Any changes will reflect in your Seller account also.
-                    </li>
-                </ul>
-            </div>
-        </div>
     </div>
-</section> {% endcomment %}
-<!-- ========================= SECTION CONTENT END// ========================= -->
+</section>
 
 <!-- Edit Profile Modal -->
 <div class="modal fade" id="editProfileModal" tabindex="-1" role="dialog" aria-labelledby="editProfileModalLabel" aria-hidden="true">
@@ -164,4 +137,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

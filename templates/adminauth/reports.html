@@ -1,0 +1,68 @@
+{% extends 'adminauth/adminbase.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Sales Report</h1>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search Order ID">
+                <button class="btn btn-primary" id="searchButton">Search</button>
+                <button class="btn btn-secondary" id="clearButton">Clear</button>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <p class="text-end">Total entities: {{ sales_report|length }}</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped" id="salesTable">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>User name</th>
+                    <th>Order Date</th>
+                    <th>Status</th>
+                    <th>Payment Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in sales_report %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.user.username }}</td>
+                        <td>{{ order.created_at }}</td>
+                        <td>{{ order.status }}</td>
+                        <td>${{ order.order_total }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.getElementById('searchButton').addEventListener('click', function() {
+        var searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+        var rows = document.querySelectorAll('#salesTable tbody tr');
+        rows.forEach(function(row) {
+            var orderId = row.querySelector('td:first-child').textContent.trim().toLowerCase();
+            if (orderId.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    document.getElementById('clearButton').addEventListener('click', function() {
+        document.getElementById('searchInput').value = '';
+        var rows = document.querySelectorAll('#salesTable tbody tr');
+        rows.forEach(function(row) {
+            row.style.display = '';
+        });
+    });
+</script>
+
+{% endblock %}

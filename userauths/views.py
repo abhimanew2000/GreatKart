@@ -22,9 +22,19 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import SetPasswordForm
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth import get_user_model, views as auth_views
+from .models import Wallet
 # ----------------------------------------------------------------------------------------------
 
 from carts.views import _cart_id
+from decimal import Decimal
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from django.http import HttpResponse
+
+
 
 user = settings.AUTH_USER_MODEL
 # def handlesignup(request):
@@ -220,6 +230,7 @@ def cancel_order_product(request, order_id):
     
     if order.status != 'Cancelled':
         order.status = 'Cancelled'
+        canceled_amount = Decimal(str(order.order_total))
         order.save()
 
         # Increase view_count for each OrderProduct
@@ -228,6 +239,11 @@ def cancel_order_product(request, order_id):
             product = order_product.product
             product.view_count += order_product.quantity
             product.save()
+
+        user = request.user
+        user_wallet, created = Wallet.objects.get_or_create(user=user)
+        user_wallet.balance += canceled_amount
+        user_wallet.save()
 
     return redirect('view_order', order_id=order.id)
 
@@ -331,9 +347,10 @@ def profile_information(request):
             messages.success(request, "Profile updated successfully.")
             
         return redirect('profile_information')
-
+    user_wallet, created = Wallet.objects.get_or_create(user=request.user)
     context = {
         'user': request.user,
+        'user_wallet': user_wallet,
     }
     return render(request, 'userauths/profile_information.html', context)
 
@@ -454,6 +471,57 @@ def add_address(request):
 
 
 
+def invoice_view(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    order_products = OrderProduct.objects.filter(order=order)
+    
+    context = {
+        'order': order,
+        'order_products': order_products,
+    }
+    
+    return render(request, 'userauths/invoice.html', context)
+
+def download_invoice(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    order_products = OrderProduct.objects.filter(order=order)
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="invoice_{order.id}.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=landscape(letter))
+    elements = []
+
+    styles = getSampleStyleSheet()
+    elements.append(Paragraph(f"Invoice - Order ID: {order.id}", styles['Heading1']))
+    elements.append(Paragraph(f"Order Date: {order.created_at}", styles['Normal']))
+    elements.append(Paragraph(f"Total Amount: {order.order_total}", styles['Normal']))
+    elements.append(Paragraph(f"Status: {order.status}", styles['Normal']))
+    
+    # Display user details
+    user = order.user
+    elements.append(Paragraph(f"User: {user.username}", styles['Normal']))
+    elements.append(Paragraph(f"Email: {user.email}", styles['Normal']))
+    elements.append(Paragraph(f"First Name: {user.first_name}", styles['Normal']))
+    elements.append(Paragraph(f"Last Name: {user.last_name}", styles['Normal']))
+    
+    data = [['Product', 'Quantity', 'Price', 'Variation']]
+    for item in order_products:
+        data.append([item.product.title, item.quantity, item.product_price, item.variation])
+    
+    table = Table(data, colWidths=[200, 50, 75, 150])
+    table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                               ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                               ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                               ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                               ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                               ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                               ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
+
+    elements.append(table)
+    doc.build(elements)
+
+    return response
 
 
 

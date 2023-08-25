@@ -40,6 +40,13 @@ class Wishlist(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - {self.product.title}'
-    
+
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=10, unique=True)
+    discount = models.PositiveIntegerField(help_text="Discount percentage")
+    expiration_date = models.DateField()
+    is_active = models.BooleanField(default=True)
+
 
 

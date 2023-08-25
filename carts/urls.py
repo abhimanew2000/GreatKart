@@ -10,15 +10,25 @@ urlpatterns = [
     # path("checkout_page/<int:grand_total>/",views.checkout_page,name='checkout_page'),
     path("checkout/<int:grandtotal>/",views.checkout,name='checkout'),
 
-    # path('razorpay/<int:grandtotal>/', views.razorpay_view, name='razorpay'),
-    # path('order_payment/', views.order_payment, name='order_payment'),
-
-    # path('success/<int:id>/', views.success_view, name='success'),
-
 
 
     path('razorpaycheck', views.razorpaycheck,name='razorpaycheck',),
     path('myorders', views.myorders,name='myorders'),
+    # path('myorders/<int:order_id>/', views.myorders, name='myorders'),
+
+    path('order_success_razorpay/<int:order_id>/', views.order_success_razorpay, name='order_success_razorpay'),
+
+
+    path('add_to_wishlist/<int:product_id>/', views.add_to_wishlist, name='add_to_wishlist'),
+    path('wishlist/', views.wishlist, name='wishlist'),
+    path('remove_from_wishlist/<int:wishlist_item_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
+    path('add_to_cart_from_wishlist/<int:wishlist_item_id>/', views.add_to_cart_from_wishlist, name='add_to_cart_from_wishlist'),
+
+
+    path('apply_coupon/', views.apply_coupon, name='apply_coupon'),
+
+
+
     
 
 
