@@ -7,7 +7,10 @@ from app.models import ProductGallery
 import json
 from django.utils import timezone
 from carts.models import Coupon
-
+from django.http import HttpResponse
+from django.template.loader import get_template
+from django.template import Context
+from reportlab.pdfgen import canvas
 # Create your views here.
 
 # def admin_panel(request):
@@ -473,3 +476,5 @@ def edit_coupon(request, pk):
         return redirect('couponlist')
     
     return render(request, 'adminauth/edit_coupon.html', {'coupon': coupon})
+
+

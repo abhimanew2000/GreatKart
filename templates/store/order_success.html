@@ -13,7 +13,7 @@
                             <p>Your order has been placed successfully. Thank you for shopping with us!</p>
                             <p>Order Number: {{ item.id }}</p>
                             <p>Order Total: ${{ item.order_total }}</p>
-                            <p>Payment Method: Cash on Delivery (COD)</p>
+                            <p>Payment Method: {{item.paymenttype}}</p>
                             <p>We will contact you shortly for order confirmation and delivery details.</p>
                         {% endfor %} 
                         <!-- Display the ordered products -->

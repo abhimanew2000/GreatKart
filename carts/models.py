@@ -1,6 +1,6 @@
 from django.db import models
 from app.models import Product,Variation,User
-
+from orders.models import OrderProduct,Order
 # Create your models here.
 class Carts(models.Model):
     cart_id = models.CharField(max_length=250,blank=True)
@@ -47,6 +47,11 @@ class Coupon(models.Model):
     discount = models.PositiveIntegerField(help_text="Discount percentage")
     expiration_date = models.DateField()
     is_active = models.BooleanField(default=True)
+
+class AppliedCoupon(models.Model):
+    coupon=models.ForeignKey(Coupon,on_delete=models.CASCADE)
+    order=models.ForeignKey(Order,on_delete=models.CASCADE)
+    
 
 
 

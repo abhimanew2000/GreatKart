@@ -33,20 +33,7 @@
                             </div>
                             {% endfor %}
 
-                            <!-- Hidden input for the selected_address field -->
-                            {% comment %} <input type="hidden" name="selected_address" value="{{ selected_address.id }}"> {% endcomment %}
-
-                            <!-- Display the user details -->
-                            {% comment %} <div class="form-row">
-                                <div class="col-md-6 form-group">
-                                    <label>
-                                        {{ user.first_name }} {{ user.last_name }}
-                                    </label>
-                                    <p class="mb-0">{{ user.email }}</p>
-                                    <p class="mb-0">Phone: {{ user.phone_number }}</p>
-                                </div>
-                            </div> {% endcomment %}
-
+                    
                             <!-- Hidden input for the user field -->
                             <input type="hidden" name="user" value="{{ user.first_name }}">
 
@@ -78,32 +65,25 @@
                                         </div>
                                         {% endfor %}
                                         {% endif %}
-                                        {% comment %} <form action="{% url 'checkout' grandtotal %}" method="post" class="info" id="apply-coupon-form">
-                                            {% csrf_token %}
-                                            <div class="form-group">
-                                                <input type="text" name="coupon_code" class="form-control text-left px-3" placeholder="Enter Coupon Code">
-                                            </div>
-                                            <p><button type="button" class="btn btn-primary text-white py-1 px-3" id="apply-coupon-btn">Apply Coupon</button></p>
-                                        </form> {% endcomment %}
+                                       
 
                                     </div>
                                 </div>
                                 {% comment %} coupon {% endcomment %}
-                                <button type="submit" name="submit" class="btn btn-success btn-block">COD/Place Order</button>
+                                {% comment %} <button type="submit" name="submit" class="btn btn-success btn-block">COD/Place Order</button> {% endcomment %}
                             {% else %}
                                 <p>Please add an address before placing the order.</p>
                             {% endif %}
                             
-                            <button id="razorpay-btn" class="btn btn-info btn-block razorpay" data-order-id="{{ order_id }}">Pay with Razorpay</button>
-                        </form>
-                        <form action="{% url 'checkout' grandtotal %}" method="post" class="info" id="apply-coupon-form">
-                            {% csrf_token %}
+                            {% comment %} <button id="razorpay-btn" class="btn btn-info btn-block razorpay" data-order-id="{{ order_id }}">Pay with Razorpay</button> {% endcomment %}
                             <div class="form-group">
-                                <input type="text" name="coupon_code" class="form-control text-left px-3" placeholder="Enter Coupon Code">
+                                <label for="coupon_code">Coupon Code:</label>
+                                <input type="text" name="coupon_code" class="form-control" placeholder="Enter Coupon Code">
                             </div>
-                            <p><button type="button" class="btn btn-primary text-white py-1 px-3" id="apply-coupon-btn">Apply Coupon</button></p>
+
+                            <button type="button" class="btn btn-primary text-white py-1 px-3" id="apply-coupon-btn">Apply Coupon</button>
+                            <button type="submit" name="action" value="proceedtopay" class="btn btn-primary text-white py-1 px-3">Proceed to Pay</button>
                         </form>
-                            <a href="{% url 'store' %}" class="btn btn-light btn-block">Continue Shopping</a>
                         
                     </div>
                 </div>
@@ -180,107 +160,6 @@
     
     
 </section>
-
-
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-{% comment %} <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> {% endcomment %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.1.5/dist/sweetalert2.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.1.5/dist/sweetalert2.min.js"></script>
-
-<script>
-    var myOrdersUrl = "{% url 'myorders' %}";
-    {% comment %} var myOrdersUrlBase = "{% url 'myorders' order_id=0 %}";  // Replace with your actual URL pattern {% endcomment %}
-
-    $(document).ready(function () {
-    
-    $('#razorpay-btn').click(function (e) {
-        e.preventDefault();
-
-        //{% comment %} var name = $("[name='user']").val(); {% endcomment %}
-        var address = $("[name='selected_address']").val();
-        var token = $("[name='csrfmiddlewaretoken']").val();
-
-        if ( selected_address =="")
-        {
-            alert("No user exist")
-            return false ;
-        }
-        else
-        {
-           $.ajax({
-            method :"GET",
-            url:"{% url 'razorpaycheck' %}",
-            success:function(response){
-                console.log(response)
-                 //var couponDiscount = response.coupon_discount;
-                     //   var originalTotal = response.total_price;
-                      //  var totalAfterCoupon = originalTotal - couponDiscount;
-                       // console.log('after coupon',totalAfterCoupon'')
-                var options = {
-                    key: "rzp_test_4o90y50Nv7s1jR",
-                    amount: response.total_price * 100, 
-                    currency: "INR",
-                    name: "GreatKart",
-                    description: "Thankyou for buy",
-                    image: "https://example.com/your_logo",
-                    // order_id: "{{order.provider_order_id}}",
-                     handler:function(responseb){
-                        var selected_address = $("[name='selected_address']:checked").val();  // Capture selected address
-                         var token = $("[name='csrfmiddlewaretoken']").val();
-                        alert(responseb.razorpay_payment_id);
-                        data={
-                            "selected_address": selected_address,
-                            "payment_method":"razorpay",
-                            "payment_id":responseb.razorpay_payment_id,
-                            csrfmiddlewaretoken:token
-                        }
-                        $.ajax({
-                            method:"POST",
-                            url: "{% url 'checkout' grandtotal=0 %}".replace('0', response.total_price),
-                            data:data,
-                            success:function(response){
-                                console.log("Response from server:", response.status);
-                                if (response.status == "Order Placed successfully") {
-                                    console.log("Order successfully placed. Redirecting to myorders.");
-                                   // swal("Congratulations", response.status, "Order successfully placed", "success").then((value) => {
-                                        console.log("SweetAlert callback executed");
-                                        console.log("Redirecting to:", myOrdersUrl);
-                                    
-                                        // Redirect to the myorders page
-                                        //var myOrdersUrl = myOrdersUrlBase.replace('0', order_id);
-                                        window.location.href = myOrdersUrl ;
-                                  //  });
-                                    
-                            }
-                            else {
-                                swal("Error", "There was an issue placing the order.", "error");
-                            }
-                            }
-                        })
-                    },
-                     prefill: {
-                         "name": selected_address,
-                     },
-                     theme: {
-                         "color": "#3399cc"
-                     }
-                 };
-                 var rzp1 = new Razorpay(options); // Initialize Razorpay with 'new'                
-                 rzp1.open();
-
-            }
-           })
-       
-        }
-
-
-    });
-});
-
-{% comment %} ----------------------- {% endcomment %}
-
-</script>
 <script>
     $(document).ready(function () {
         $('#apply-coupon-btn').click(function (e) {

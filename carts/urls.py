@@ -12,11 +12,11 @@ urlpatterns = [
 
 
 
-    path('razorpaycheck', views.razorpaycheck,name='razorpaycheck',),
-    path('myorders', views.myorders,name='myorders'),
+    # path('razorpaycheck', views.razorpaycheck,name='razorpaycheck',),
+    # path('myorders', views.myorders,name='myorders'),
     # path('myorders/<int:order_id>/', views.myorders, name='myorders'),
 
-    path('order_success_razorpay/<int:order_id>/', views.order_success_razorpay, name='order_success_razorpay'),
+    # path('order_success_razorpay/<int:order_id>/', views.order_success_razorpay, name='order_success_razorpay'),
 
 
     path('add_to_wishlist/<int:product_id>/', views.add_to_wishlist, name='add_to_wishlist'),
@@ -27,6 +27,13 @@ urlpatterns = [
 
     path('apply_coupon/', views.apply_coupon, name='apply_coupon'),
 
+
+
+    path('proceed_to_pay/<int:grandtotal>/', views.proceed_to_pay, name='proceed_to_pay'),
+    path('place_order/', views.place_order, name='place_order'),
+
+
+ path("callback/", views.callback, name="callback"),
 
 
     

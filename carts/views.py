@@ -6,7 +6,7 @@ from app.models import Variation
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from userauths.models import Address
-from orders.models import Order,OrderProduct,Payment
+from orders.models import Order,OrderProduct,Payment,Razorpay_Order
 import razorpay
 from django.conf import settings
 from django.http import JsonResponse
@@ -20,6 +20,19 @@ from .models import Wishlist,Coupon
 from django.utils import timezone
 from django.contrib import messages
 from datetime import date
+from orders.constant import PaymentStatus
+from django.views.decorators.cache import never_cache
+
+from django.views.decorators.csrf import csrf_exempt
+import razorpay
+from project.settings import (
+    RAZORPAY_KEY_ID,
+    RAZORPAY_KEY_SECRET,
+)
+from django.views.decorators.csrf import csrf_exempt
+import json
+from django.template.loader import render_to_string
+
 
 # Create your views here.
 
@@ -223,44 +236,27 @@ RAZORPAY_KEY_SECRET = 'nlmYaIYmAyx29rc3BUZSmDRu'
 
 @login_required(login_url='handlelogin')
 def checkout(request,grandtotal,total=0,quantity=0,cart_items=None,):
+
     current_user = request.user
     cart_items = CartItem.objects.filter(user=current_user, is_active=True)
     cart_count = cart_items.count()
     if cart_count <= 0:
+        print('hhhhhhdddddddddddd')
         return redirect('store')
     
     coupon_code = request.POST.get('coupon_code')
     print('coupon_code',coupon_code)
-    if coupon_code:
-        try:
-            coupon = Coupon.objects.get(code=coupon_code, is_active=True, expiration_date__gte=date.today())
-            coupon_discount = (coupon.discount / 100) * grand_total
-            final_total -= coupon_discount
-            print('final total',final_total)
-        except Coupon.DoesNotExist:
-            pass  # Handle invalid coupon code
-    
-    # -------------------coupon--------------------------
-    # grand_total_without_coupon = grandtotal
-    # for cart_item in cart_items:
-    #     grand_total_without_coupon += cart_item.product.selling_price * cart_item.quantity
-    # tax = (2 * grand_total_without_coupon) / 100
-    # grand_total_without_coupon += tax
-    
-    # # Apply coupon discount if coupon code is provided
-    # coupon_code = request.POST.get('coupon_code')
     # if coupon_code:
     #     try:
     #         coupon = Coupon.objects.get(code=coupon_code, is_active=True, expiration_date__gte=date.today())
-    #         coupon_discount = (coupon.discount / 100) * grand_total_without_coupon
-    #         final_total = grand_total_without_coupon - coupon_discount
+    #         coupon_discount = (coupon.discount / 100) * grand_total
+    #         final_total -= coupon_discount
+    #         print('final total',final_total)
     #     except Coupon.DoesNotExist:
-    #         coupon_discount = 0
-    #         final_total = grand_total_without_coupon
-    # else:
-    #     coupon_discount = 0
-    #     final_total = grand_total_without_coupon
-    # ------------------------------
+    #         pass  # Handle invalid coupon code
+    
+    # -------------------coupon--------------------------
+   
     print(grandtotal)
 
     grand_total = grandtotal
@@ -280,54 +276,48 @@ def checkout(request,grandtotal,total=0,quantity=0,cart_items=None,):
 
 
  
-    if request.method == 'POST':      
+    if request.method == 'POST':     
+        print('helooooooooooooooo') 
         selected_address_id = request.POST.get('selected_address')
+        coupon_code = request.POST.get('coupon_code')
+        action=request.POST.get('action')
+
 
         payment_id=request.POST.get('payment_id')
         print('paymentid',payment_id)
         print('selected address is :', selected_address_id) 
         # grand_total = int(request.POST.get('grand_total', 0))
+        if coupon_code:
+            try:
+                coupon = Coupon.objects.get(code=coupon_code, is_active=True, expiration_date__gte=date.today())
+                coupon_discount = (coupon.discount / 100) * grandtotal
+                final_total -= coupon_discount
+                print('final total',final_total)
+                print('coupon_code is ...',coupon_code)
+
+            except Coupon.DoesNotExist:
+                pass 
         try:
             selected_address = Address.objects.get(pk=int(selected_address_id), user=request.user)
             print('selected add :', selected_address_id) 
 
         except Address.DoesNotExist:
             return redirect('store')  # Redirect to store page if selected address is not found
-        
-        
-        
-        # Create the order
-        order = Order.objects.create(
-            user=request.user,
-            tax=tax,
-            selected_address=selected_address,
-            order_total=final_total,
-            status='New',  # Set the status to 'New' for a new order
             
-        )
-        for cart_item in cart_items:
-            for variation in cart_item.variation.all():  # Loop through all variations for this cart item
-                OrderProduct.objects.create(
-                        order=order,
-                        user=current_user,
-                        product=cart_item.product,
-                        variation=variation,  # Assign the specific variation
-                        quantity=cart_item.quantity,
-                        product_price=cart_item.product.selling_price,
-                    )
-            cart_item.product.view_count -= cart_item.quantity
-            cart_item.product.save()
+            
+            
+       
+        summary_context = {
+            'selected_address': selected_address,
+            'cart_items': cart_items,
+            'coupon_discount': coupon_discount,
+            'final_total': final_total,
+            
+        }
 
-        cart_items.delete()
+        return render(request, 'store/proceed_to_pay.html', summary_context)
 
-        # Here you can add additional logic to handle the cart items and payment
-        payMode=request.POST.get('payment_method')
-        if payMode=="razorpay":
-            return JsonResponse({'status':"Order Placed successfully"})
-        return redirect('order_success',id=order.id) 
-    
-    
-    # order_id = create_razorpay_order(grandtotal)
+ 
     context = {
         'total': total,
         'quantity': quantity,
@@ -335,13 +325,16 @@ def checkout(request,grandtotal,total=0,quantity=0,cart_items=None,):
         'tax':tax,
         'grandtotal':int(grandtotal),
         'addresses': addresses,
-        'final_total': final_total,
+        # 'final_total': final_total,
+        'final_total': grand_total,  # Pass the calculated grand_total to the template
+
         
-       
+        
     }
-    
+
 
     return render(request,'store/checkout.html',context)
+
 
 
 def success_view(request):
@@ -361,46 +354,8 @@ import logging
 
 
 
-@login_required
-def razorpaycheck(request):
-    current_user = request.user
-    cart_items= CartItem.objects.filter(user=current_user)
-    total_price=0
-    for item in cart_items:
-        total_price = total_price + item.product.selling_price * item.quantity
-    tax = (2 * total_price) / 100
-    total_price+=tax
-    
-
-    return JsonResponse({
-        'total_price':int(total_price),
-
-    })
-def myorders(request):
-    current_user = request.user
-    orders = Order.objects.filter(user=current_user)
-    for order in orders:
-        print("Order ID:", order.id)
-        print("Order Total:", order.order_total)
-
-    context = {
-        'orders': orders,
-    }
-
-    return render(request, 'store/ordersuccess_razorpay.html', context)
 
 
-
-def order_success_razorpay(request, id):
-    order = get_object_or_404(Order, id=id, user=request.user)
-    order_products = OrderProduct.objects.filter(order=order)
-    print('order product',order_products)
-    context = {
-        'order': order,  # Pass the order object directly
-        'order_products': order_products,
-    }
-
-    return render(request, 'store/ordersuccess_razorpay.html', context)
 
 # -------------------------------wishlist---------------------------------------------------
 def add_to_wishlist(request, product_id):
@@ -481,3 +436,281 @@ def apply_coupon(request):
         return JsonResponse(response_data)
     else:
         return JsonResponse({'status': 'error'})
+    
+
+def proceed_to_pay(request, grandtotal):
+    print("get inside",grandtotal)
+    selected_address_id = request.session.get('selected_address_id')
+    tax=request.POST.get('tax')
+    selected_address = get_object_or_404(Address, id=selected_address_id)
+
+    current_user = request.user
+    cart_items = CartItem.objects.filter(user=current_user, is_active=True)
+
+    # Calculate coupon_discount and final_total based on coupon code (similar to checkout view)
+    coupon_code = request.POST.get('coupon_code')
+    coupon_discount = 0
+
+    if coupon_code:
+        try:
+            coupon = Coupon.objects.get(code=coupon_code, is_active=True, expiration_date__gte=date.today())
+            coupon_discount = (coupon.discount / 100) * grandtotal
+        except Coupon.DoesNotExist:
+            pass
+
+    final_total = grandtotal - coupon_discount
+
+    # Create the order
+    order = Order.objects.create(
+        user=current_user,
+        selected_address=selected_address,
+        order_total=final_total,
+        # tax=calculate_tax(grandtotal),  # Replace with your tax calculation logic
+        status='New',
+        discount=coupon_discount,  # Save coupon discount in the order's discount field
+    )
+    print(order.order_total,"tttttttttttttttttttttttttttttttttttttttt")
+    order_id = order.id
+    print(order_id,"orderrrrrrrrrrrr")
+    # Other context variables needed for the template
+    context = {
+        'selected_address': selected_address,
+        'cart_items': cart_items,
+        'coupon_discount': coupon_discount,
+        'final_total': final_total,
+        'order': order.id,  # Pass the order object to the template
+    }
+
+    return render(request, 'store/proceed_to_pay.html', context)
+
+def place_order(request):
+    if request.method == 'POST':
+        action=request.POST.get('action')
+        print(action,'actionnnnnnn')
+        selected_address_id = request.POST.get('selected_address')
+        print(selected_address_id,"bbbbbbbbb")
+        final_total=request.POST.get('final_total')
+        print(final_total,"fffffffffffff")
+        cart_items = CartItem.objects.filter(user=request.user, is_active=True)
+
+
+
+        if action=="Cash on Delivery":
+            selected_address = get_object_or_404(Address, id=selected_address_id)
+
+            order = Order.objects.create(
+            user=request.user,
+            selected_address=selected_address,
+            order_total=final_total,
+            status='New',  # Set the status to 'New' for a new order
+            paymenttype="Cash On delivery",
+            
+        )
+            for cart_item in cart_items:
+                for variation in cart_item.variation.all():  # Loop through all variations for this cart item
+                    OrderProduct.objects.create(
+                            order=order,
+                            user=request.user,
+                            product=cart_item.product,
+                            variation=variation,  # Assign the specific variation
+                            quantity=cart_item.quantity,
+                            product_price=cart_item.product.selling_price,
+                        )
+                cart_item.product.view_count -= cart_item.quantity
+                cart_item.product.save()
+            
+            cart_items.delete()
+            return redirect("order_success",id=order.id)
+
+
+        if action == "Pay with Razorpay":
+
+            selected_address = get_object_or_404(Address, id=selected_address_id)
+            amount=str(final_total)
+            name=selected_address.first_name
+            amount=float(amount)
+            client=razorpay.Client(auth=(settings.RAZORPAY_KEY_ID,settings.RAZORPAY_KEY_SECRET))
+            razorpay_order = client.order.create(
+                {"amount":int(amount)*100,"currency":"INR","payment_capture":"1"}
+            )
+            order = Order.objects.create(
+            user=request.user,
+            selected_address=selected_address,
+            order_total= amount,
+            status='New',  # Set the status to 'New' for a new order
+            
+            
+        )
+            for cart_item in cart_items:
+                for variation in cart_item.variation.all():  # Loop through all variations for this cart item
+                    OrderProduct.objects.create(
+                            order=order,
+                            user=request.user,
+                            product=cart_item.product,
+                            variation=variation,  # Assign the specific variation
+                            quantity=cart_item.quantity,
+                            product_price=cart_item.product.selling_price,
+                        )
+                cart_item.product.view_count -= cart_item.quantity
+                cart_item.product.save()
+            bulk_order_id=order.id
+            cart_items.delete()
+            current_order = bulk_order_id
+            current_user = request.user
+            print(current_user,"current_userrrrrrrrrr",current_order)
+
+
+            return render(
+                request,
+                "store/payment.html",
+                {
+                    "callback_url": "http://127.0.0.1:8000/carts/callback/?current_order={}&current_user={}&final_total={}".format(current_order, current_user,final_total),
+
+                    "razorpay_key": RAZORPAY_KEY_ID,
+                    "order": order,
+                    "final_total": final_total,
+
+                },
+            )
+        
+        
+
+
+
+
+        
+        else:
+            pass
+            print("pass")
+    return render(request, "store/payment.html")
+
+
+
+# @csrf_exempt
+# def callback(request):
+#     print('enter to callback function')
+#     current_user = request.GET.get("current_user")   
+#     bulk_order_id = request.GET.get("current_order")
+#     print("current_userrrrrrrrrrrr",current_user)
+    
+
+#     current_order = Order.objects.filter(id = bulk_order_id)
+
+#     def verify_signature(response_data):
+#         client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+#         print(client,'ccccccccccccccccccccc')
+#         return client.utility.verify_payment_signature(response_data)
+#     print(request,"request")
+#     print(request.POST,"requst.post")
+#     # signature_id = request.POST.get("razorpay_signature", "")
+#     # signature = request.META.get('HTTP_X_RAZORPAY_SIGNATURE', '')
+#     # print('signature is signature',signature)
+
+#     print(signature_id,"singature iddddddddddddddddd",request)
+#     if "razorpay_signature" in request.POST:
+#         payment_id = request.POST.get("razorpay_payment_id", "")
+#         provider_order_id = request.POST.get("razorpay_order_id", "")
+#         print(provider_order_id,"providerrrrrrrrrrrrrrrr")
+#         signature_id = request.POST.get("razorpay_signature", "")
+
+#         order = Razorpay_Order.objects.get(provider_order_id=provider_order_id)
+#         order.payment_id = payment_id
+#         order.signature_id = signature_id
+#         order.save()
+#         if  verify_signature(request.POST):
+#             order.status = PaymentStatus.SUCCESS
+#             order.save()
+#             print("success")
+#             current_order.update(payment_status = "Paid")
+#             print(current_order,"status")
+#             # cart_items.delete()
+#             # return render(request, "orders/order_summery.html", context={"status": order.status})
+#             # return redirect('order_summery', bulk_order_id=bulk_order_id)
+#             return redirect("order_success",id=bulk_order_id)
+
+        
+#         else:
+#             order.status = PaymentStatus.FAILURE
+#             order.save()
+#             current_order.delete()
+#             print("failed")
+#             return render(request, "orders/order_failed.html")
+        
+#     else:
+#         print(request.POST.get("error[metadata]"),"heloooooo")
+  
+#         payment_id = json.loads(request.POST.get("error[metadata]")).get("payment_id")
+#         provider_order_id = json.loads(request.POST.get("error[metadata]")).get(
+#             "order_id"
+#         )
+#         try:
+#             order = Razorpay_Order.objects.get(provider_order_id=provider_order_id)
+#             order.payment_id = payment_id
+#             order.status = PaymentStatus.FAILURE
+#             order.save()
+#             current_order.delete()
+#             print("else failed")
+#             return render(request, "orders/order_failed.html")
+#         except:
+#             return render(request, "orders/order_failed.html")
+
+
+
+
+@csrf_exempt      
+def callback(request):
+    def verify_signature(response_data):
+        client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+        return client.utility.verify_payment_signature(response_data)
+        print('11111111111111111111111111111')
+    if "razorpay_signature" in request.POST:
+        payment_id = request.POST.get("razorpay_payment_id", "")
+        provider_order_id = request.POST.get("razorpay_order_id", "")
+        print("Provider Order ID:", provider_order_id)
+        signature_id = request.POST.get("razorpay_signature", "")
+        order = Razorpay_Order.get(provider_order_id=provider_order_id)
+        order.payment_id = payment_id
+        order.signature_id = signature_id
+        order.save()
+        if verify_signature(request.POST):
+            order.status = PaymentStatus.SUCCESS
+            order.save()
+            return render(request, "payment_success.html", context={"status": order.status})
+        else:
+            order.status = PaymentStatus.FAILURE
+            order.save()
+            return render(request, "payment_success.html", context={"status": order.status})
+    else:
+        payment_id = json.loads(request.POST.get("error[metadata]")).get("payment_id")
+        provider_order_id = json.loads(request.POST.get("error[metadata]")).get(
+            "order_id"
+        )
+        order = Razorpay_Order.objects.get(provider_order_id=provider_order_id)
+        order.payment_id = payment_id
+        order.status = PaymentStatus.FAILURE
+        order.save()
+        return render(request, "payment_success.html", context={"status": order.status})
+
+            
+
+    
+# @never_cache
+# def order_summery(request, bulk_order_id):
+
+#     cart_items = CartItem.objects.all()
+#     for cart in cart_items:
+#         if cart.variant.variant_stock > 0:
+#             cart.delete()
+#         else:
+#             pass 
+#     orders = Order.objects.filter(bulk_order_id = bulk_order_id)
+#     print(bulk_order_id,"got it bulk order id")
+#     order_user = request.user
+#     # coupon_amount = orders.coupon.discount_price
+#     # total_amount = orders.total_amount+coupon_amount
+#     context = {
+#     "orders":orders,
+#     "user":order_user,
+#     # "total_amount":total_amount,
+#     }
+#     return render(request, "orders/order_summery.html",context)

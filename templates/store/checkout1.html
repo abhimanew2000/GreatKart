@@ -63,13 +63,45 @@
                                 <input type="hidden" name="is_ordered" value="{{ is_ordered }}">
                                 <input type="hidden" name="created_at" value="{{ created_at }}">
                                 <input type="hidden" name="updated_at" value="{{ updated_at }}">
-                                <input type="hidden" name="payment_method" value="">  <!-- Add this field -->
-                                <button type="submit" name="submit" class="btn btn-success btn-block">COD/Place Order</button>
+                                {% comment %} <input type="hidden" name="payment_method" value="">  <!-- Add this field --> {% endcomment %}
+
+                                {% comment %} coupon {% endcomment %}
+
+                                <div class="col-lg-4 mt-5 cart-wrap ftco-animate">
+                                    <div class="cart-total mb-3 text-center">
+                                        <h3 class="text-center">Coupon</h3>
+                                        <p>Enter your coupon code if you have one</p>
+                                        {% if messages %}
+                                        {% for message in messages %}
+                                        <div class="alert alert-{{ message.tags }}" role="alert">
+                                            {{ message }}
+                                        </div>
+                                        {% endfor %}
+                                        {% endif %}
+                                        {% comment %} <form action="{% url 'checkout' grandtotal %}" method="post" class="info" id="apply-coupon-form">
+                                            {% csrf_token %}
+                                            <div class="form-group">
+                                                <input type="text" name="coupon_code" class="form-control text-left px-3" placeholder="Enter Coupon Code">
+                                            </div>
+                                            <p><button type="button" class="btn btn-primary text-white py-1 px-3" id="apply-coupon-btn">Apply Coupon</button></p>
+                                        </form> {% endcomment %}
+
+                                    </div>
+                                </div>
+                                {% comment %} coupon {% endcomment %}
+                                <button type="submit" name="cod"  value="cod" class="btn btn-success btn-block">COD/Place Order</button>
                             {% else %}
                                 <p>Please add an address before placing the order.</p>
                             {% endif %}
                             
                             <button id="razorpay-btn" class="btn btn-info btn-block razorpay" data-order-id="{{ order_id }}">Pay with Razorpay</button>
+                        </form>
+                        <form action="{% url 'checkout' grandtotal %}" method="post" class="info" id="apply-coupon-form">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <input type="text" name="coupon_code" class="form-control text-left px-3" placeholder="Enter Coupon Code">
+                            </div>
+                            <p><button type="button" class="btn btn-primary text-white py-1 px-3" id="apply-coupon-btn">Apply Coupon</button></p>
                         </form>
                             <a href="{% url 'store' %}" class="btn btn-light btn-block">Continue Shopping</a>
                         
@@ -77,6 +109,7 @@
                 </div>
             </div>
              <!-- Apply Coupon Section -->
+            
 
 
             <!-- Display Cart Items and Grand Total -->
@@ -120,24 +153,34 @@
                                         </div>
                                     </td>
                                     <td>
-                                        {% comment %} <div class="price-wrap">
-                                            <var class="price">$ {{ grandtotal|floatformat:2 }}</var>
-                                        </div> {% endcomment %}
+                                        
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                         <!-- Display the Grand Total Price -->
+                        {% comment %} <div class="text-right">
+                            <p>Coupon Discount: ${{ coupon_discount|floatformat:2 }}</p>
+                            <h4>Final Total: ${{ final_total|floatformat:2 }}</h4>
+                        </div> {% endcomment %}
                         <div class="text-right">
-                            <h4>Total: $ {{ grandtotal|floatformat:2 }}</h4>
+                            <h4>Total: $ {{ grandtotal|floatformat:1 }}</h4>
+                        </div>
+                        <div class="text-right">
+                            <p>Coupon Discount: <span id="coupon-discount">0.00</span></p>
+                            <h4> Total(include coupondiscount): <span id="final-total">{{ grandtotal|floatformat:1 }}</span></h4>
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> 
+            
         </div>
     </div>
+    
+    
 </section>
+
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 {% comment %} <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> {% endcomment %}
@@ -170,6 +213,10 @@
             url:"{% url 'razorpaycheck' %}",
             success:function(response){
                 console.log(response)
+                 //var couponDiscount = response.coupon_discount;
+                     //   var originalTotal = response.total_price;
+                      //  var totalAfterCoupon = originalTotal - couponDiscount;
+                       // console.log('after coupon',totalAfterCoupon'')
                 var options = {
                     key: "rzp_test_4o90y50Nv7s1jR",
                     amount: response.total_price * 100, 
@@ -190,7 +237,7 @@
                         }
                         $.ajax({
                             method:"POST",
-                            url: "{% url 'checkout' grandtotal=0 %}".replace('0', response.total_price),
+                            url: "{% url 'checkout' grandtotal=final_total %}"
                             data:data,
                             success:function(response){
                                 console.log("Response from server:", response.status);
@@ -230,7 +277,158 @@
 
     });
 });
-</script>
 
+{% comment %} ----------------------- {% endcomment %}
+
+</script>
+<script>
+    $(document).ready(function () {
+        $('#apply-coupon-btn').click(function (e) {
+            e.preventDefault(); // Prevent default form submission
+            
+            var couponCode = $('[name="coupon_code"]').val();
+            var token = $('[name="csrfmiddlewaretoken"]').val();
+            var grandTotal = '{{ grandtotal }}';
+            // AJAX request to apply_coupon view
+            console.log("Coupon Code:", couponCode);
+            console.log("Token:", token);
+            console.log("Grand Total:", grandTotal);
+            $.ajax({
+                method: 'POST',
+                url: '{% url "apply_coupon" %}',
+                data: {
+                    'csrfmiddlewaretoken': token,
+                    'coupon_code': couponCode,
+                    'grand_total': grandTotal 
+                },
+                
+                success: function (response) {
+                    if (response.status === 'success') {
+                        // Update coupon discount and other relevant UI elements
+                        // You can use response.coupon_discount and update the UI as needed
+                        $('#coupon-discount').text('$' + response.coupon_discount);
+                        $('#final-total').text('$' + response.final_total);
+                    } else {
+                        alert('Invalid coupon code');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while applying the coupon.');
+                }
+            });
+        });
+    
+        // Rest of your JavaScript code
+    });
+    </script>
 {% endblock %}
 
+
+@login_required(login_url='handlelogin')
+def checkout(request,grandtotal,total=0,quantity=0,cart_items=None,):
+    current_user = request.user
+    cart_items = CartItem.objects.filter(user=current_user, is_active=True)
+    cart_count = cart_items.count()
+    if cart_count <= 0:
+        return redirect('store')
+    
+    coupon_code = request.POST.get('coupon_code')
+    print('coupon_code',coupon_code)
+    if coupon_code:
+        try:
+            coupon = Coupon.objects.get(code=coupon_code, is_active=True, expiration_date__gte=date.today())
+            coupon_discount = (coupon.discount / 100) * grand_total
+            final_total -= coupon_discount
+            print('final total',final_total)
+        except Coupon.DoesNotExist:
+            pass  # Handle invalid coupon code
+    
+    # -------------------coupon--------------------------
+   
+    print(grandtotal)
+
+    grand_total = grandtotal
+    for cart_item in cart_items:
+        print(cart_item.quantity)
+        print(cart_item.product.selling_price)
+
+        grand_total += cart_item.product.selling_price* cart_item.quantity
+    tax = (2 * grand_total) / 100
+    grand_total += tax
+    
+    coupon_discount = 0
+    final_total = grandtotal
+
+    print('grand_total',grandtotal)
+    addresses = Address.objects.filter(user=current_user)
+    payMode=request.POST.get('payment_method')
+
+    if payMode=="cod":
+        print('hello codo')
+        
+
+ 
+        if request.method == 'POST':      
+
+            selected_address_id = request.POST.get('selected_address')
+
+            payment_id=request.POST.get('payment_id')
+            print('paymentid',payment_id)
+            print('selected address is :', selected_address_id) 
+            # grand_total = int(request.POST.get('grand_total', 0))
+            try:
+                selected_address = Address.objects.get(pk=int(selected_address_id), user=request.user)
+                print('selected add :', selected_address_id) 
+
+            except Address.DoesNotExist:
+                return redirect('store')  # Redirect to store page if selected address is not found
+            
+            
+            
+            # Create the order
+            order = Order.objects.create(
+                user=request.user,
+                tax=tax,
+                selected_address=selected_address,
+                order_total=final_total,
+                status='New',  # Set the status to 'New' for a new order
+                
+            )
+            for cart_item in cart_items:
+                for variation in cart_item.variation.all():  # Loop through all variations for this cart item
+                    OrderProduct.objects.create(
+                            order=order,
+                            user=current_user,
+                            product=cart_item.product,
+                            variation=variation,  # Assign the specific variation
+                            quantity=cart_item.quantity,
+                            product_price=cart_item.product.selling_price,
+                        )
+                cart_item.product.view_count -= cart_item.quantity
+                cart_item.product.save()
+
+            cart_items.delete()
+
+        # Here you can add additional logic to handle the cart items and payment
+        payMode=request.POST.get('payment_method')
+        if payMode=="razorpay":
+            print('hello razorpay')
+            return JsonResponse({'status':"Order Placed successfully"})
+        return redirect('order_success',id=order.id) 
+    
+    
+    # order_id = create_razorpay_order(grandtotal)
+    context = {
+        'total': total,
+        'quantity': quantity,
+        'cart_items': cart_items,
+        'tax':tax,
+        'grandtotal':int(grandtotal),
+        'addresses': addresses,
+        'final_total': final_total,
+        
+       
+    }
+    
+
+    return render(request,'store/checkout.html',context)

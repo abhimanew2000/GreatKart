@@ -2,7 +2,9 @@ from django.db import models
 from userauths.models import User
 from app.models import Product,Variation
 from userauths.models import Address
-
+from.constant import PaymentStatus
+from django.db.models import CharField
+from django.utils.translation import gettext as _
 
 # Create your models here.
 
@@ -32,13 +34,15 @@ class Order(models.Model):
     payment=models.ForeignKey(Payment,on_delete=models.SET_NULL,blank=True,null=True)
     order_number = models.CharField(max_length=20)
     order_total = models.FloatField()
-    tax=models.FloatField()
-    status=models.CharField(max_length=10, choices=STATUS, default=True)
+    tax=models.FloatField(null=True)
+    status=models.CharField(max_length=10, choices=STATUS, default=False)
     ip =  models.CharField(blank=True,max_length=20)
     is_ordered=models.BooleanField(default=False)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now_add=True)
     selected_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
+    discount=models.FloatField(null=True)
+    paymenttype=models.CharField(null=True)
 
  
     def __str__(self):
@@ -56,9 +60,34 @@ class OrderProduct(models.Model):
     ordered=models.BooleanField(default=False)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now_add=True)
+    
 
     def __str__(self):
         return self.product.title
+    
+
+class Razorpay_Order(models.Model):
+    name = CharField(_("Customer Name"), max_length=254, blank=False, null=False)
+    amount = models.FloatField(_("Amount"), null=False, blank=False)
+    status = CharField(
+        _("Payment Status"),
+        default=PaymentStatus.PENDING,
+        max_length=254,
+        blank=False,
+        null=False,
+    )
+    provider_order_id = models.CharField(
+        _("Order ID"), max_length=40, null=False, blank=False
+    )
+    payment_id = models.CharField(
+        _("Payment ID"), max_length=36, null=False, blank=False
+    )
+    signature_id = models.CharField(
+        _("Signature ID"), max_length=128, null=False, blank=False
+    )
+
+    def _str_(self):
+        return f"{self.id}-{self.name}-{self.status}"
     
 
 

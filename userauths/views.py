@@ -6,6 +6,7 @@ from django.conf import settings
 from userauths.models import User
 from carts.models import Carts,CartItem
 from orders.models import Order,OrderProduct
+from django.views.decorators.cache import never_cache
 
 import random
 from django.core.mail import send_mail
@@ -185,6 +186,8 @@ def handlelogin(request):
 
     return render(request, "userauths/handlelogin.html")
 
+
+@never_cache
 def handlelogout(request):
     logout(request)
     

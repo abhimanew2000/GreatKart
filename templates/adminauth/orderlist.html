@@ -31,7 +31,7 @@
                                 <td>
                                     
                                         {% csrf_token %}
-                                        <select name="status" class="form-control">
+                                        <select name="status" class="form-control" {% if order.status == 'Cancelled' %}disabled{% endif %}>
                                             {% for choice in statuses %}
                                                 {% if choice.0 == order.status %}
                                                     <option value="{{ choice.0 }}" selected>{{ choice.1 }}</option>

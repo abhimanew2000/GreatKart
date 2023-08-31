@@ -3,6 +3,10 @@
 
 {% block content %}
 <div class="container">
+    <div class="mb-3">
+        <button class="btn btn-primary" id="pdfButton">Print as PDF</button>
+        <button class="btn btn-success" id="excelButton">Print as Excel</button>
+    </div>
     <h1 class="mb-4">Sales Report</h1>
     <div class="row mb-3">
         <div class="col-md-6">
@@ -42,7 +46,38 @@
     </div>
 </div>
 
+<style>
+    table {
+        /* Width of the table */
+        width: 100%;
+        /* Overflow of the table */
+        overflow: hidden;
+      }
+      
+      table tr:nth-child(even) {
+        /* Background color of the even rows */
+        background-color: #f2f2f2;
+      }
+      
+      table th, table td {
+        /* Padding of the cells */
+        padding: 5px;
+      }
+      
+      table th {
+        /* Text alignment of the headers */
+        text-align: left;
+      }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.10.2/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.2/jspdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/TableExport/5.2.0/js/tableexport.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+
+
 <script>
+    
     document.getElementById('searchButton').addEventListener('click', function() {
         var searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
         var rows = document.querySelectorAll('#salesTable tbody tr');
@@ -63,6 +98,33 @@
             row.style.display = '';
         });
     });
+
+    document.getElementById('pdfButton').addEventListener('click', function() {
+        var doc = new jsPDF();
+        doc.text("Sales Report", 10, 10);
+          
+        var table = document.getElementById('salesTable');
+        var tableHtml = table.outerHTML;
+        doc.fromHTML(tableHtml, 15, 15, {
+            tableLayout: 'auto', // Use 'auto' for better layout
+            width: 190, // Adjust the width to fit within the PDF page
+            margin: { top: 20, bottom: 20, left: 10, right: 10 } // Adjust margins
+        });
+          
+        doc.save('sales_report.pdf');
+    });
+
+    document.getElementById('excelButton').addEventListener('click', function() {
+        console.log('the buttin is clicked')
+        var table = document.getElementById('salesTable');
+
+        TableExport(table, {
+            formats: ['xlsx'],
+            exportButtons: false
+        }).exportToExcel();
+    });
+    
+    
 </script>
 
 {% endblock %}
