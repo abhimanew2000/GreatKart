@@ -11,11 +11,12 @@ from django.http import HttpResponse
 from django.template.loader import get_template
 from django.template import Context
 from reportlab.pdfgen import canvas
+from django.views.decorators.cache import never_cache
+
 # Create your views here.
 
 # def admin_panel(request):
 #     return render(request, 'adminauth/admin_panel.html')
-
 def admin_signin(request):
     if request.method == 'POST':
         email = request.POST.get('email')

@@ -13,6 +13,9 @@
                         <!-- Display the selected address details here -->
                         <p name="selected_address">{{ selected_address.first_name }} {{ selected_address.last_name }}</p>
                         <p>{{ selected_address.address_line_1 }}</p>
+                        {{ selected_address.city }} ,{{ selected_address.state }}
+                        <p>{{ selected_address.phone }}</p>
+
                         <!-- Display other address fields -->
 
                         <h5>Product Details:</h5>
@@ -20,6 +23,7 @@
                             <thead>
                                 <tr>
                                     <th>Product</th>
+                                    <th>Image</th>
                                     <th>Quantity</th>
                                     <th>Price</th>
                                 </tr>
@@ -28,6 +32,7 @@
                                 {% for cart_item in cart_items %}
                                 <tr>
                                     <td>{{ cart_item.product.title }}</td>
+                                    <td><img src="{{ cart_item.product.image.url }}" alt="{{ cart_item.product.title }}" class="product-image" width="100" height="100"></td>
                                     <td>{{ cart_item.quantity }}</td>
                                     <td>{{ cart_item.product.selling_price }}</td>
                                 </tr>
@@ -44,7 +49,6 @@
                         </p>
 
                         <!-- Add payment options or button to proceed with payment -->
-                        <p>Order ID: {{ order }}</p>
                         <form action="{% url 'place_order' %}" method="post">
                             {% csrf_token %}
                             <input type="hidden" name="selected_address" value="{{ selected_address.id }}">

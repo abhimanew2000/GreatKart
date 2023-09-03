@@ -35,6 +35,7 @@ urlpatterns = [
 
  path("callback/", views.callback, name="callback"),
 
+path('ordersuccess/', views.ordersuccess, name='ordersuccess'),
 
     
 

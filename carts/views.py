@@ -126,9 +126,6 @@ def add_cart(request, product_id):
         if is_cart_item_exists:
             cart_item=CartItem.objects.filter(product=product,cart=cart)
 
-            # existing variations---datatbse
-            # Current variation---->produt_variation
-            # item_id---
             ex_var_list=[]
             id=[]
             for item in cart_item:
@@ -385,7 +382,7 @@ def wishlist(request):
         context = {'wishlist_items': wishlist_items}
         return render(request, 'store/wishlist.html', context)
     else:
-        return redirect('login')
+        return redirect('handlelogin')
     
 def add_to_cart_from_wishlist(request, wishlist_item_id):
     print("wishlist",wishlist_item_id)
@@ -526,18 +523,23 @@ def place_order(request):
         if action == "Pay with Razorpay":
 
             selected_address = get_object_or_404(Address, id=selected_address_id)
-            amount=str(final_total)
+            amount = str(final_total)
             name=selected_address.first_name
-            amount=float(amount)
-            client=razorpay.Client(auth=(settings.RAZORPAY_KEY_ID,settings.RAZORPAY_KEY_SECRET))
+            amount = float(amount)
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID,settings.RAZORPAY_KEY_SECRET))
             razorpay_order = client.order.create(
                 {"amount":int(amount)*100,"currency":"INR","payment_capture":"1"}
             )
+            orders = Razorpay_Order.objects.create(
+                    name=selected_address.first_name, amount=amount, provider_order_id=razorpay_order["id"]
+                    )
+            orders.save()
             order = Order.objects.create(
             user=request.user,
             selected_address=selected_address,
             order_total= amount,
             status='New',  # Set the status to 'New' for a new order
+            paymenttype="Razorpay",
             
             
         )
@@ -564,10 +566,9 @@ def place_order(request):
                 request,
                 "store/payment.html",
                 {
-                    "callback_url": "http://127.0.0.1:8000/carts/callback/?current_order={}&current_user={}&final_total={}".format(current_order, current_user,final_total),
-
+                "callback_url": "http://127.0.0.1:8000/carts/callback/?current_order={}".format(current_order),
                     "razorpay_key": RAZORPAY_KEY_ID,
-                    "order": order,
+                    "orders": orders,
                     "final_total": final_total,
 
                 },
@@ -659,6 +660,8 @@ def place_order(request):
 
 @csrf_exempt      
 def callback(request):
+    bulk_order_id = request.GET.get("current_order")
+    print(bulk_order_id,"bbbbbbbb")
     def verify_signature(response_data):
         client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
         return client.utility.verify_payment_signature(response_data)
@@ -668,30 +671,33 @@ def callback(request):
         provider_order_id = request.POST.get("razorpay_order_id", "")
         print("Provider Order ID:", provider_order_id)
         signature_id = request.POST.get("razorpay_signature", "")
-        order = Razorpay_Order.get(provider_order_id=provider_order_id)
-        order.payment_id = payment_id
-        order.signature_id = signature_id
-        order.save()
+        print('signature idddddd',signature_id)
+        orders = Razorpay_Order.objects.get(provider_order_id=provider_order_id)
+        orders.payment_id = payment_id
+        orders.signature_id = signature_id
+        orders.save()
         if verify_signature(request.POST):
-            order.status = PaymentStatus.SUCCESS
-            order.save()
-            return render(request, "payment_success.html", context={"status": order.status})
+            orders.status = PaymentStatus.SUCCESS
+            orders.save()
+            return redirect('order_success',bulk_order_id)
         else:
-            order.status = PaymentStatus.FAILURE
-            order.save()
-            return render(request, "payment_success.html", context={"status": order.status})
+            orders.status = PaymentStatus.FAILURE
+            orders.save()
+            return render(request, "store/payment_failure.html", context={"status": orders.status})
     else:
         payment_id = json.loads(request.POST.get("error[metadata]")).get("payment_id")
         provider_order_id = json.loads(request.POST.get("error[metadata]")).get(
             "order_id"
         )
-        order = Razorpay_Order.objects.get(provider_order_id=provider_order_id)
-        order.payment_id = payment_id
-        order.status = PaymentStatus.FAILURE
-        order.save()
-        return render(request, "payment_success.html", context={"status": order.status})
+        orders = Razorpay_Order.objects.get(provider_order_id=provider_order_id)
+        orders.payment_id = payment_id
+        orders.status = PaymentStatus.FAILURE
+        orders.save()
+        return render(request, "payment_success.html", context={"status": orders.status})
 
-            
+def ordersuccess(request,id):
+    
+    return render(request, "store/order_success.html")        
 
     
 # @never_cache

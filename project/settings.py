@@ -12,7 +12,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import environ
+from dotenv import load_dotenv
 
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 # settings.py
@@ -24,7 +27,7 @@ BASE_URL = 'http://127.0.0.1:8000'
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rq&_l_jmc*bj79$!y6v7gsvs4=hz!bq8*k+=aldk!_me4t@3zn'
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -91,10 +94,10 @@ WSGI_APPLICATION = 'project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME':'newfirstproject',
-        'USER':'postgres',
-        'PASSWORD':'m6a2n6u8',
-        'HOST':'localhost'
+        'NAME': os.getenv("NAME"),
+        'USER': os.getenv('USER'),
+        'PASSWORD': os.getenv('PASSWORD'),
+        'HOST': 'localhost',
     }
 }
 
@@ -116,7 +119,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -154,15 +156,17 @@ AUTH_USER_MODEL ='userauths.User'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # SMTP settings (replace with your email provider's settings)
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587  # Your SMTP port number
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'abhimanew2000@gmail.com'  # Replace with your Gmail email address
-EMAIL_HOST_PASSWORD = 'skbebikgthwfaufn'  # Your email password
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = os.getenv('EMAIL_PORT')  # Your SMTP port number
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Replace with your Gmail email address
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD') # Your email password
 
 # Default sender email (used as "From" address in emails)
 DEFAULT_FROM_EMAIL = 'abhimanew2000@gmail.com'  # Replace with your Gmail email address
 
 
-RAZORPAY_KEY_ID = 'rzp_test_4o90y50Nv7s1jR'
-RAZORPAY_KEY_SECRET = 'nlmYaIYmAyx29rc3BUZSmDRu'
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET=  os.getenv('RAZORPAY_KEY_SECRET')
+
+

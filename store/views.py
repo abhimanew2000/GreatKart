@@ -62,33 +62,6 @@ def product_detail(request, cat_slug, slug):
     }
     return render(request, 'store/product_detail.html', context)
 
-# def search(request):
-    # search_query = request.GET.get('q')
-    # print("Search Query:", search_query)
-
-
-    # if search_query:
-    #     products = Product.objects.filter(
-    #         Q(title__icontains=search_query) | Q(description__icontains=search_query),
-    #         is_available=True
-    #     )
-    #     print("Matching Products:", products)
-
-    #     paginator = Paginator(products, 3)
-    #     page = request.GET.get('page')
-    #     paged_products = paginator.get_page(page)
-    #     product_count = products.count()
-    # else:
-    #     paged_products = []
-    #     product_count = 0
-
-    # context = {
-    #     'products': paged_products,
-    #     'product_count': product_count,
-    #     'search_query': search_query,
-    # }
-
-    # return render(request, 'store/search.html', context)
 
 def search_results(request):
     search_query = request.GET.get('q')

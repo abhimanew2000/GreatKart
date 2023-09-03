@@ -4,18 +4,18 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
     var options = {
-        key: "rzp_test_4o90y50Nv7s1jR",
-        amount: "{{order.amount}}" , 
+        key: "{{razorpay_key}}",
+        amount: "{{orders.amount}}", 
         currency: "INR",
         name: "{{order.name}}",
         description: "Test Transaction",
         image: "https://example.com/your_logo",
-        order_id: "{{order.provider_order_id}}",
+        order_id: "{{orders.provider_order_id}}",
         callback_url: "{{callback_url}}",
         redirect: true,
         prefill: {
-            "name": "Don Xavier",
-            "email": "donxavier369@gmail.com",
+            "name": "rasha eshaal",
+            "email": "rashaeshaal@gmail.com",
             "contact": "8289976295"
         },
         notes: {
@@ -28,7 +28,6 @@
     var rzp1 = new Razorpay(options);
     rzp1.open();
     </script>
-    <input type="hidden" name="amount" value="{{ final_total }}">  <!-- Add this line -->
     <input type="hidden" custom="Hidden Element" name="hidden">
 </form>
 {% endblock %}
